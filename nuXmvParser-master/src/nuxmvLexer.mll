@@ -32,24 +32,36 @@ let letter = ['_' 'a'-'z' 'A'-'Z']
 
 let identifier = letter (digit | letter | ['$' '#' '-'])*
 
+let constInt = (digit)+ | '-' (digit)+
+
 rule token = parse
   | "MODULE"         { P.MODULE }
   | "VAR"            { P.VAR }
   | "DEFINE"         { P.DEFINE }
   | "ASSIGN"         { P.ASSIGN }
+  | "self"           { P.SELF }
   | "init"           { P.INIT }
   | "next"           { P.NEXT }
   | "case"           { P.CASE }
   | "esac"           { P.ESAC }
-  | ";"              { P.SEMICOLON }
-  | ":"              { P.COLON }
-  | "{"              { P.LCURLBRACK }
-  | "}"              { P.RCURLBRACK }
+  | "boolean"        { P.BOOL }
+  | "integer"        { P.INT }
+  | "TRUE"           { P.TRUE }
+  | "FALSE"          { P.FALSE }
+  | '.'              { P.PERIOD }
+  | ';'              { P.SEMICOLON }
+  | ':'              { P.COLON }
+  | '{'              { P.LCURLBRACK }
+  | '}'              { P.RCURLBRACK }
+  | '['              { P.LSQBRACK }
+  | ']'              { P.RSQBRACK }
   | ','              { P.COMMA }
   | '('              { P.LPAREN }
   | ')'              { P.RPAREN }
-  | "="              { P.EQUALS }
+  | '&'              { P.AND }
+  | '='              { P.EQUALS }
   | ":="             { P.ASSIGNMENT }
+  | constInt as int  { P.CINT (int_of_string (int)) }
   | identifier as id { P.ID id }
   | whitespace       { token lexbuf }
   | newline          { Lexing.new_line lexbuf ; token lexbuf }
