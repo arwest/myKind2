@@ -95,7 +95,9 @@ assign_element:
 basic_expr:
     | c = constant { c }
     | basic_expr EQUALS basic_expr {}
+    | LPAREN basic_expr RPAREN {}
     | basic_expr AND basic_expr {}
+    | LCURLBRACK separated_nonempty_list(COMMA, basic_expr) RCURLBRACK {}
     | CASE nonempty_list(case_element) ESAC {}
     ;
 
