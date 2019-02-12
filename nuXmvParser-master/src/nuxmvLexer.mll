@@ -63,8 +63,36 @@ rule token = parse
   | ":="             { P.ASSIGNMENT }
   | constInt as int  { P.CINT (int_of_string (int)) }
   | identifier as id { P.ID id }
+
+  (* Whitespace and New Line (both ignored) *)
   | whitespace       { token lexbuf }
   | newline          { Lexing.new_line lexbuf ; token lexbuf }
+
+  (* Inline.
+    Need to have the '-'* here, otherwise "---" would be matched 
+    as operator *)
+  | "--" '-'* { skip_to_eol lexbuf }
+  (* Multi-line.
+  | "/*" { skip_commented_slashstar lexbuf }
+  | "(*" { skip_commented_parenstar lexbuf }
+  *)
+
+  (* End of File *)
   | eof              { P.EOF }
+
+  (* Unexpected Character *)
   | _ as c           { raise (Unexpected_Char c) }
+
+and skip_to_eol = parse
+
+  (* Count new line and resume *)
+  | newline { Lexing.new_line lexbuf; token lexbuf } 
+
+  (* Line ends at end of file *)
+  | eof { token lexbuf }
+
+  (* Ignore characters *)
+  | _ { skip_to_eol lexbuf }
+
+
 
