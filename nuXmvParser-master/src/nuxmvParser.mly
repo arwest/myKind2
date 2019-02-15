@@ -16,9 +16,10 @@
 
 (* @author Andrew West*)
 %{
+
 module A = NuxmvAst
 
-let mk_pos = 
+let mk_pos = Position.create_position 
   
 %}
 

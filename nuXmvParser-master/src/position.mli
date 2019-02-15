@@ -21,3 +21,5 @@ type t = { fname : string; line: int; col: int }
 val pp_print_position: Format.formatter -> t -> unit
 
 val get_position: Lexing.lexbuf -> t
+
+val create_position: Lexing.position -> t

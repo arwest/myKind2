@@ -29,3 +29,11 @@ let get_position lexbuf =
     line = pos.Lexing.pos_lnum ; 
     col = pos.Lexing.pos_cnum - pos.Lexing.pos_bol + 1 
   }
+
+let create_position position =
+  let pos = position in
+  {
+    fname = pos.Lexing.pos_fname ;
+    line = pos.Lexing.pos_lnum ; 
+    col = pos.Lexing.pos_cnum - pos.Lexing.pos_bol + 1 
+  }
