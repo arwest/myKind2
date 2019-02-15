@@ -14,15 +14,18 @@
 
 *)
 
-(** @author Daniel Larraz *)
+(** @author Andrew West *)
 
-type input = unit
+type t = { fname : string; line: int; col: int }
 
-type parse_error =
-  | UnexpectedChar of Position.t * char
-  | SyntaxError of Position.t
+let pp_print_position fmt { fname; line; col } =
+  let fname = if fname = "" then "<stdin>" else fname in
+  Format.fprintf fmt "%s:%d:%d" fname line col
 
-val from_channel: in_channel -> (input, parse_error) result
-
-val from_file: string -> (input, parse_error) result
-
+let get_position lexbuf =
+  let pos = Lexing.lexeme_start_p lexbuf in
+  {
+    fname = pos.Lexing.pos_fname ;
+    line = pos.Lexing.pos_lnum ; 
+    col = pos.Lexing.pos_cnum - pos.Lexing.pos_bol + 1 
+  }

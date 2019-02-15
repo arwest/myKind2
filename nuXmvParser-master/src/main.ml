@@ -22,10 +22,10 @@ let read_input_from_file filename =
 
   | Error (NuxmvInput.UnexpectedChar (pos, c)) ->
       Format.eprintf "%a: error: unexpected character ‘%c’@."
-        NuxmvInput.pp_print_position pos c
+        Position.pp_print_position pos c
 
   | Error (NuxmvInput.SyntaxError pos) ->
-      Format.eprintf "%a: syntax error@." NuxmvInput.pp_print_position pos
+      Format.eprintf "%a: syntax error@." Position.pp_print_position pos
 
   | exception (Sys_error msg) ->
       Format.eprintf "%s@." msg

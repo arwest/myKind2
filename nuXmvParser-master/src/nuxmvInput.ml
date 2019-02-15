@@ -16,38 +16,20 @@
 
 (** @author Daniel Larraz *)
 
-
-type position = { fname : string; line: int; col: int }
-
 type input = unit
 
 type parse_error =
-  | UnexpectedChar of position * char
-  | SyntaxError of position
-
-
-let pp_print_position fmt { fname; line; col } =
-  let fname = if fname = "" then "<stdin>" else fname in
-  Format.fprintf fmt "%s:%d:%d" fname line col
-
-
-let get_position lexbuf =
-  let pos = Lexing.lexeme_start_p lexbuf in
-  {
-    fname = pos.Lexing.pos_fname ;
-    line = pos.Lexing.pos_lnum ; 
-    col = pos.Lexing.pos_cnum - pos.Lexing.pos_bol + 1 
-  }
-
+  | UnexpectedChar of Position.t * char
+  | SyntaxError of Position.t
 
 let parse_buffer lexbuf =
   try
     Ok (NuxmvParser.module_decl NuxmvLexer.token lexbuf)
   with 
   | NuxmvLexer.Unexpected_Char c ->
-    let pos = get_position lexbuf in Error (UnexpectedChar (pos, c))
+    let pos = Position.get_position lexbuf in Error (UnexpectedChar (pos, c))
   | NuxmvParser.Error ->
-    let pos = get_position lexbuf in Error (SyntaxError pos)
+    let pos = Position.get_position lexbuf in Error (SyntaxError pos)
 
 
 let from_channel in_ch =

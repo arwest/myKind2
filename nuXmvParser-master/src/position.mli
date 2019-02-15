@@ -14,15 +14,10 @@
 
 *)
 
-(** @author Daniel Larraz *)
+(** @author Andrew West *)
 
-type input = unit
+type t = { fname : string; line: int; col: int }
 
-type parse_error =
-  | UnexpectedChar of Position.t * char
-  | SyntaxError of Position.t
+val pp_print_position: Format.formatter -> t -> unit
 
-val from_channel: in_channel -> (input, parse_error) result
-
-val from_file: string -> (input, parse_error) result
-
+val get_position: Lexing.lexbuf -> t
