@@ -59,7 +59,7 @@ type enum_type_value =
 type simple_type_spec = 
     | Bool of Position.t
     | Int of Position.t
-    | IntRange of Position.t * b_expr * b_expr
+    | IntRange of Position.t * int * int
     | EnumType of Position.t * (b_expr) list 
 
 type module_type_param = 
