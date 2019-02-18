@@ -62,12 +62,12 @@ type simple_type_spec =
     | IntRange of Position.t * int * int
     | EnumType of Position.t * (b_expr) list 
 
-type module_type_param = 
-    | MTParam of Position.t * (b_expr list) option
+type module_type_specifier = 
+    | ModuleTypeSpecifier of Position.t * ident * (b_expr list) option
 
-type state_var_decl = 
+type state_var_decl =
     | SimpleType of Position.t * ident * simple_type_spec
-    | ModuleType of Position.t * ident * ident * (module_type_param list) option
+    | ModuleType of Position.t * ident * module_type_specifier
 
 type define_element = 
     | SimpleDef of Position.t * ident * b_expr 
@@ -106,4 +106,8 @@ type module_element =
     | TransConst of Position.t * b_expr list
     | LtlSpec of Position.t * ltl_expr
 
-type t = (ident list) option * (module_element list) option
+type nuxmv_module = 
+    | CustomModule of ident * (ident list) option * (module_element list) option
+
+(* A nuxmv program *)
+type t = nuxmv_module list
