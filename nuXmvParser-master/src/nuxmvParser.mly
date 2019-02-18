@@ -51,11 +51,12 @@ let mk_pos = Position.create_position
 %left  PLUS MINUS
 %left  NOT
 
-%start<A.t> module_decl
+%start<A.t> program
 
 %%
+program: ml = nonempty_list(module_decl) { ml }
 
-module_decl: MODULE; ID; mp = option(module_params); mb = option(module_body); EOF { A.t (mp, mb)} ; 
+module_decl: MODULE; id = ID; mp = option(module_params); mb = option(module_body); EOF { A.CustomModule (id, mp, mb) } ; 
 
 module_params: LPAREN; mpl = separated_nonempty_list(COMMA, ID); RPAREN { mpl } ;
 
@@ -70,11 +71,11 @@ module_element:
  ;
 
 (* State Var Declarations *)
-state_var_declaration: VAR; sve = nonempty_list(state_var_element) { sve };
+state_var_declaration: VAR; sve = nonempty_list(state_var_element) { A.StateVarDecl (mk_pos $startpos, sve) };
 
 state_var_element:
-    | i = ID; COLON; s = simple_type_specifier; SEMICOLON { A.SimpleType (mk_pos $startpos, i, s) }
-    | i1 = ID; COLON; i2 = ID; p = option(module_type_spec_params); SEMICOLON { A.ModuleType (mk_pos $startpos, i1, i2, p) }
+    | i = ID; COLON; sts = simple_type_specifier; SEMICOLON { A.SimpleType (mk_pos $startpos, i, sts) }
+    | i = ID; COLON; mts = module_type_spec; SEMICOLON { A.ModuleType (mk_pos $startpos, i, mts) }
     ;
 
 simple_type_specifier:
@@ -89,8 +90,12 @@ enum_type_value:
     | ci = CINT { A.ETCInt (mk_pos $startpos, ci) }
     ;
 
-module_type_spec_params:
-    | LPAREN; il = option(separated_list(COMMA, basic_expr)); RPAREN { A.MTParam (mk_pos $startpos, il) }
+module_type_spec:
+    | id = ID; pl = option(module_type_spec_param_list) { A.ModuleTypeSpecifier (mk_pos $startpos, id, pl)}
+
+module_type_spec_param_list:
+    | LPAREN; RPAREN { [] }
+    | LPAREN; il = basic_expr_list; RPAREN { il }
     ;
 
 (* Definition Declarations *)
@@ -130,7 +135,7 @@ ltl_expr:
     | le1 = ltl_expr; AND; le2 = ltl_expr { A.LtlAnd (mk_pos $startpos, le1, le2) }
     | le1 = ltl_expr; OR; le2 = ltl_expr { A.LtlOr (mk_pos $startpos, le1, le2) }
     | le1 = ltl_expr; XOR; le2 = ltl_expr { A.LtlXor (mk_pos $startpos, le1, le2) }
-    | le1 = ltl_expr; XNOR; le2 = ltl_expr { A.ltlXnor (mk_pos $startpos, le1, le2) }
+    | le1 = ltl_expr; XNOR; le2 = ltl_expr { A.LtlXnor (mk_pos $startpos, le1, le2) }
     | le1 = ltl_expr; RARROW; le2 = ltl_expr { A.LtlImpl (mk_pos $startpos, le1, le2) }
     | le1 = ltl_expr; DARROW; le2 = ltl_expr { A.LtlEquiv (mk_pos $startpos, le1, le2) }
     (* FUTURE *)
@@ -142,7 +147,7 @@ ltl_expr:
     (* PAST *)
     | Y; le = ltl_expr { A.PrevState (mk_pos $startpos, le) }
     | Z; le = ltl_expr { A.NotPrevStateNot (mk_pos $startpos, le) }
-    | H; le = ltl_expr { A.Hisorically (mk_pos $startpos, le) }
+    | H; le = ltl_expr { A.Historically (mk_pos $startpos, le) }
     | O; le = ltl_expr { A.Once (mk_pos $startpos, le) }
     | le1 = ltl_expr; S; le2 = ltl_expr { A.Since (mk_pos $startpos, le1, le2) }
     | le1 = ltl_expr; T; le2 = ltl_expr { A.Triggered (mk_pos $startpos, le1, le2) }
@@ -179,7 +184,7 @@ basic_bool_expr:
     ;
 
 function_call: 
-    | ci = complex_indentifier; LPAREN; el = nonempty_list(next_expr) { A.Call (mk_pos $startpos, ci, el) }
+    | ci = complex_indentifier; LPAREN; el = nonempty_list(next_expr); RPAREN { A.Call (mk_pos $startpos, ci, el) }
     ;
 
 case_element:
@@ -193,11 +198,9 @@ simple_expr: (* Note that simple expressions cannot contain next operators *)
 next_expr:
     | b = basic_expr { b }
     ;
-    
-(*
+
 basic_expr_list:
-    | el = separated_nonempty_list(COMMA, basic_expr) { }
-*)
+    | el = separated_nonempty_list(COMMA, basic_expr) { el }
 
 array_expr:
     | LSQBRACK; el = separated_nonempty_list(COMMA, next_expr); RSQBRACK { A.ArrayExp (mk_pos $startpos, el) }
