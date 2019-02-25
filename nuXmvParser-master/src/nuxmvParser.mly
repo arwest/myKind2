@@ -51,13 +51,13 @@ let mk_pos = Position.create_position
 %left  PLUS MINUS
 %left  NOT
 
-%start<A.t> program
-%type<A.b_expr> basic_expr next_expr simple_expr
+%start<NuxmvAst.t> program
+%type<NuxmvAst.b_expr> basic_expr next_expr simple_expr
 
 %%
-program: ml = nonempty_list(module_decl) { ml }
+program: ml = nonempty_list(module_decl) EOF { ml }
 
-module_decl: MODULE id = ID mp = option(module_params) mb = option(module_body) EOF { A.CustomModule (id, mp, mb) }  
+module_decl: MODULE id = ID mp = option(module_params) mb = option(module_body) { A.CustomModule (id, mp, mb) }  
 
 module_params: LPAREN mpl = separated_nonempty_list(COMMA, ID) RPAREN { mpl } 
 
