@@ -80,7 +80,7 @@ type assign_const =
     | Assign of Position.t * comp_ident * b_expr 
 
 type ltl_expr = 
-    | BoolExpr of Position.t * b_expr 
+    | LtlBool of Position.t * b_expr 
     | LtlNot of Position.t * ltl_expr 
     | LtlAnd of Position.t * ltl_expr * ltl_expr
     | LtlOr of Position.t * ltl_expr * ltl_expr
@@ -105,8 +105,8 @@ type ltl_expr =
 type module_element = 
     | StateVarDecl of Position.t * state_var_decl list
     | DefineDecl of Position.t * define_element list
-    | AssignConst of Position.t * assign_const
-    | TransConst of Position.t * b_expr list
+    | AssignConst of Position.t * assign_const list
+    | TransConst of Position.t * b_expr
     | LtlSpec of Position.t * ltl_expr
 
 type nuxmv_module = 

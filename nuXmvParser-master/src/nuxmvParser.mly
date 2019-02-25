@@ -52,6 +52,7 @@ let mk_pos = Position.create_position
 %left  NOT
 
 %start<A.t> program
+%type<A.b_expr> basic_expr next_expr simple_expr
 
 %%
 program: ml = nonempty_list(module_decl) { ml }
@@ -134,7 +135,7 @@ ltl_specification: LTLSPEC le = ltl_expr option(SEMICOLON) { A.LtlSpec (mk_pos $
     ;
 
 ltl_expr:
-    | b = basic_bool_expr { b } (* Manual said simple_expr but specified boolean *)
+    | b = basic_bool_expr { A.LtlBool (mk_pos $startpos, b) }         (* Manual said simple_expr but specified boolean *)
     | LPAREN le = ltl_expr RPAREN { le }
     | NOT le = ltl_expr { A.LtlNot (mk_pos $startpos, le)}
     | le1 = ltl_expr AND le2 = ltl_expr { A.LtlAnd (mk_pos $startpos, le1, le2) }
@@ -161,11 +162,11 @@ ltl_expr:
 (* General Purpose Rules *)
 basic_expr:
     | c = constant { c }
-(*    | fc = function_call { fc }  *)
+    | fc = function_call { fc }
     | b = basic_bool_expr { b }
     | MINUS e = basic_expr { A.Uminus (mk_pos $startpos, e)}
-    | e1 = basic_expr PLUS basic_expr { A.Plus (mk_pos $startpos, e1, e2)}
-    | e1 = basic_expr MINUS basic_expr { A.Minus (mk_pos $startpos, e1, e2) }
+    | e1 = basic_expr PLUS e2 = basic_expr { A.Plus (mk_pos $startpos, e1, e2)}
+    | e1 = basic_expr MINUS e2 = basic_expr { A.Minus (mk_pos $startpos, e1, e2) }
     | e1 = basic_expr MOD e2 = basic_expr { A.Mod (mk_pos $startpos, e1, e2) }
     | LPAREN e = basic_expr RPAREN { e }
     | LCURLBRACK el = separated_nonempty_list(COMMA, basic_expr) RCURLBRACK { A.SetExp (mk_pos $startpos, el) }
@@ -188,7 +189,7 @@ basic_bool_expr:
     | e1 = basic_expr LTE e2 = basic_expr { A.Lte (mk_pos $startpos, e1, e2) }
     | e1 = basic_expr GTE e2 = basic_expr { A.Gte (mk_pos $startpos, e1, e2) }
     ;
-(*
+
 function_call: 
     | ci = complex_indentifier LPAREN el = function_call_params RPAREN { A.Call (mk_pos $startpos, ci, el) }
     ;
@@ -197,7 +198,7 @@ function_call_params:
     | e = basic_expr { [e] }
     | e = basic_expr function_call_params  {e :: []}
     ;
-*)
+
 case_element:
     | e1 = basic_expr COLON e2 = basic_expr SEMICOLON { (e1, e2) }
     ;
@@ -224,5 +225,5 @@ constant:
     | TRUE { A.True (mk_pos $startpos) }
     | s = ID { A.Ident (mk_pos $startpos, s) }
     | i = CINT { A.CInt (mk_pos $startpos, i) }
-    | i1 = CINT DPERIOD i2 = CINT { A.CRange (mk_pos $startpos, i1, i2) }
+    | i1 = basic_expr DPERIOD i2 = basic_expr { A.CRange (mk_pos $startpos, i1, i2) }
     ;
