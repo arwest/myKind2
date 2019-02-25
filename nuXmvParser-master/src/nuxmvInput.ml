@@ -24,7 +24,7 @@ type parse_error =
 
 let parse_buffer lexbuf =
   try
-    Ok (NuxmvParser.module_decl NuxmvLexer.token lexbuf)
+    Ok (NuxmvParser.program NuxmvLexer.token lexbuf)
   with 
   | NuxmvLexer.Unexpected_Char c ->
     let pos = Position.get_position lexbuf in Error (UnexpectedChar (pos, c))

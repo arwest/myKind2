@@ -22,7 +22,7 @@ type parse_error =
   | UnexpectedChar of Position.t * char
   | SyntaxError of Position.t
 
-val from_channel: in_channel -> (input, parse_error) result
+val from_channel: in_channel -> (NuxmvAst.t, parse_error) result
 
-val from_file: string -> (input, parse_error) result
+val from_file: string -> (NuxmvAst.t, parse_error) result
 
