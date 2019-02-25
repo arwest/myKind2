@@ -46,6 +46,7 @@ type b_expr =
     | ArrayExp of Position.t * b_expr list
     | CaseExp of Position.t * (b_expr * b_expr) list
     | NextExp of Position.t * b_expr
+
 and comp_ident = 
     | CIdent of Position.t * ident
     | PerIdent of Position.t * comp_ident * ident
@@ -60,7 +61,7 @@ type simple_type_spec =
     | Bool of Position.t
     | Int of Position.t
     | IntRange of Position.t * int * int
-    | EnumType of Position.t * (b_expr) list 
+    | EnumType of Position.t * (enum_type_value) list 
 
 type module_type_specifier = 
     | ModuleTypeSpecifier of Position.t * ident * (b_expr list) option
@@ -70,16 +71,16 @@ type state_var_decl =
     | ModuleType of Position.t * ident * module_type_specifier
 
 type define_element = 
-    | SimpleDef of Position.t * ident * b_expr 
-    | ArrayDef of Position.t * ident * b_expr 
+    | SimpleDef of Position.t * ident * b_expr
+    | ArrayDef of Position.t * ident * b_expr
 
 type assign_const = 
     | InitAssign of Position.t * comp_ident * b_expr 
     | NextAssign of Position.t * comp_ident * b_expr 
-    | Assign of Position.t * comp_ident * b_expr
+    | Assign of Position.t * comp_ident * b_expr 
 
 type ltl_expr = 
-    | BoolExpr of Position.t * b_expr
+    | BoolExpr of Position.t * b_expr 
     | LtlNot of Position.t * ltl_expr 
     | LtlAnd of Position.t * ltl_expr * ltl_expr
     | LtlOr of Position.t * ltl_expr * ltl_expr
@@ -87,11 +88,13 @@ type ltl_expr =
     | LtlXnor of Position.t * ltl_expr * ltl_expr
     | LtlImpl of Position.t * ltl_expr * ltl_expr
     | LtlEquiv of Position.t * ltl_expr * ltl_expr
+    (* FUTURE *)
     | NextState of Position.t * ltl_expr
     | Globally of Position.t * ltl_expr
     | Finally of Position.t * ltl_expr
     | Until of Position.t * ltl_expr * ltl_expr
     | Releases of Position.t * ltl_expr * ltl_expr
+    (* PAST *)
     | PrevState of Position.t * ltl_expr
     | NotPrevStateNot of Position.t * ltl_expr
     | Historically of Position.t * ltl_expr
@@ -109,5 +112,6 @@ type module_element =
 type nuxmv_module = 
     | CustomModule of ident * (ident list) option * (module_element list) option
 
-(* A nuxmv program *)
 type t = nuxmv_module list
+
+
