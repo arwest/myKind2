@@ -26,7 +26,7 @@ type b_expr =
     | False of Position.t
     | CInt of Position.t * int
     | Ident of Position.t * ident
-    | CRange of Position.t * constant * constant
+    | CRange of Position.t * b_expr * b_expr (* Make sure the expressions returned are ints *)
 
     (* Function Call *)
     | Call of Position.t * comp_ident * b_expr list
