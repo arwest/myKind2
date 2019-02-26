@@ -20,57 +20,72 @@ type ident = string
 
 
 (* Basic Expressions *)
-type b_expr = 
+type nuxmv_expr = 
     (* Values *)
     | True of Position.t
     | False of Position.t
     | CInt of Position.t * int
     | Ident of Position.t * ident
-    | CRange of Position.t * b_expr * b_expr (* Make sure the expressions returned are ints *)
+    | CRange of Position.t * nuxmv_expr * nuxmv_expr (* Make sure the expressions returned are ints *)
 
     (* Function Call *)
-    | Call of Position.t * comp_ident * b_expr list
+    | Call of Position.t * comp_ident * nuxmv_expr list
 
     (* Boolean operators *)
-    | Not of Position.t * b_expr
-    | And of Position.t * b_expr * b_expr
-    | Or of Position.t * b_expr * b_expr
-    | Xor of Position.t * b_expr * b_expr
-    | Xnor of Position.t * b_expr * b_expr
-    | Impl of Position.t * b_expr * b_expr
-    | Equiv of Position.t * b_expr * b_expr
+    | Not of Position.t * nuxmv_expr
+    | And of Position.t * nuxmv_expr * nuxmv_expr
+    | Or of Position.t * nuxmv_expr * nuxmv_expr
+    | Xor of Position.t * nuxmv_expr * nuxmv_expr
+    | Xnor of Position.t * nuxmv_expr * nuxmv_expr
+    | Impl of Position.t * nuxmv_expr * nuxmv_expr
+    | Equiv of Position.t * nuxmv_expr * nuxmv_expr
 
     (* Relations *)
-    | Eq of Position.t * b_expr * b_expr
-    | NotEq of Position.t * b_expr * b_expr
-    | Lt of Position.t * b_expr * b_expr
-    | Lte of Position.t * b_expr * b_expr
-    | Gt of Position.t * b_expr * b_expr
-    | Gte of Position.t * b_expr * b_expr
+    | Eq of Position.t * nuxmv_expr * nuxmv_expr
+    | NotEq of Position.t * nuxmv_expr * nuxmv_expr
+    | Lt of Position.t * nuxmv_expr * nuxmv_expr
+    | Lte of Position.t * nuxmv_expr * nuxmv_expr
+    | Gt of Position.t * nuxmv_expr * nuxmv_expr
+    | Gte of Position.t * nuxmv_expr * nuxmv_expr
 
     (* Arithmetic operators *)
-    | Plus of Position.t * b_expr * b_expr
-    | Uminus of Position.t * b_expr
-    | Minus of Position.t * b_expr * b_expr
-    | Mod of Position.t * b_expr * b_expr
+    | Plus of Position.t * nuxmv_expr * nuxmv_expr
+    | Uminus of Position.t * nuxmv_expr
+    | Minus of Position.t * nuxmv_expr * nuxmv_expr
+    | Mod of Position.t * nuxmv_expr * nuxmv_expr
     
     (* Set Expression *)
-    | SetExp of Position.t * b_expr list
+    | SetExp of Position.t * nuxmv_expr list
 
     (* Array Expression*)
-    | ArrayExp of Position.t * b_expr list
+    | ArrayExp of Position.t * nuxmv_expr list
 
     (* Case Expression*)
-    | CaseExp of Position.t * (b_expr * b_expr) list
+    | CaseExp of Position.t * (nuxmv_expr * nuxmv_expr) list
 
     (* Next Expression*)
-    | NextExp of Position.t * b_expr
+    | NextExp of Position.t * nuxmv_expr
+    
+    (* Ltl Operations *)
+        (* FUTURE *)
+    | NextState of Position.t * nuxmv_expr
+    | Globally of Position.t * nuxmv_expr
+    | Finally of Position.t * nuxmv_expr
+    | Until of Position.t * nuxmv_expr * nuxmv_expr
+    | Releases of Position.t * nuxmv_expr * nuxmv_expr
+        (* PAST *)
+    | PrevState of Position.t * nuxmv_expr
+    | NotPrevStateNot of Position.t * nuxmv_expr
+    | Historically of Position.t * nuxmv_expr
+    | Once of Position.t * nuxmv_expr
+    | Since of Position.t * nuxmv_expr * nuxmv_expr
+    | Triggered of Position.t * nuxmv_expr * nuxmv_expr
 
 (* Complex Identifiers *)
 and comp_ident = 
     | CIdent of Position.t * ident
     | PerIdent of Position.t * comp_ident * ident
-    | BrackIdent of Position.t * comp_ident * b_expr
+    | BrackIdent of Position.t * comp_ident * nuxmv_expr
     | Self of Position.t
 
 type enum_type_value = 
@@ -84,49 +99,26 @@ type simple_type_spec =
     | EnumType of Position.t * (enum_type_value) list (* Assert that it is either an indent or cint*)
 
 type module_type_specifier = 
-    | ModuleTypeSpecifier of Position.t * ident * (b_expr list) option
+    | ModuleTypeSpecifier of Position.t * ident * (nuxmv_expr list) option
 
 type state_var_decl =
     | SimpleType of Position.t * ident * simple_type_spec
     | ModuleType of Position.t * ident * module_type_specifier
 
 type define_element = 
-    | SimpleDef of Position.t * ident * b_expr (* Assert no next operation in expr *)
-    | ArrayDef of Position.t * ident * b_expr (* Assert that it is an array expr and is allowed next *)
+    | SimpleDef of Position.t * ident * nuxmv_expr (* Assert no next operation in expr *)
+    | ArrayDef of Position.t * ident * nuxmv_expr (* Assert that it is an array expr and is allowed next *)
 
 type assign_const = 
-    | InitAssign of Position.t * comp_ident * b_expr (* Assert not next operation *)
-    | NextAssign of Position.t * comp_ident * b_expr (* Assert not next operation *)
-    | Assign of Position.t * comp_ident * b_expr (* Next operation allowed *)
-
-type ltl_expr = 
-    | LtlBool of Position.t * b_expr (* Assert this is a boolean expr *)
-    | LtlNot of Position.t * ltl_expr 
-    | LtlAnd of Position.t * ltl_expr * ltl_expr
-    | LtlOr of Position.t * ltl_expr * ltl_expr
-    | LtlXor of Position.t * ltl_expr * ltl_expr
-    | LtlXnor of Position.t * ltl_expr * ltl_expr
-    | LtlImpl of Position.t * ltl_expr * ltl_expr
-    | LtlEquiv of Position.t * ltl_expr * ltl_expr
-    (* FUTURE *)
-    | NextState of Position.t * ltl_expr
-    | Globally of Position.t * ltl_expr
-    | Finally of Position.t * ltl_expr
-    | Until of Position.t * ltl_expr * ltl_expr
-    | Releases of Position.t * ltl_expr * ltl_expr
-    (* PAST *)
-    | PrevState of Position.t * ltl_expr
-    | NotPrevStateNot of Position.t * ltl_expr
-    | Historically of Position.t * ltl_expr
-    | Once of Position.t * ltl_expr
-    | Since of Position.t * ltl_expr * ltl_expr
-    | Triggered of Position.t * ltl_expr * ltl_expr
+    | InitAssign of Position.t * comp_ident * nuxmv_expr (* Assert not next operation *)
+    | NextAssign of Position.t * comp_ident * nuxmv_expr (* Assert not next operation *)
+    | Assign of Position.t * comp_ident * nuxmv_expr (* Next operation allowed *)
 
 type module_element = 
     | StateVarDecl of Position.t * state_var_decl list
     | DefineDecl of Position.t * define_element list
     | AssignConst of Position.t * assign_const list
-    | TransConst of Position.t * b_expr (* Next operation is allowed *)
+    | TransConst of Position.t * nuxmv_expr (* Next operation is allowed *)
     | LtlSpec of Position.t * ltl_expr
 
 type nuxmv_module = 
