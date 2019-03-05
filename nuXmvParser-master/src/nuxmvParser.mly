@@ -55,7 +55,7 @@ exception Ltl_Use_Error
 %nonassoc X G F U V Y Z H O S T
 
 %start<NuxmvAst.t> program
-%type<NuxmvAst.nuxmv_expr> basic_expr next_expr simple_expr
+%type<NuxmvAst.expr_type> ltl_expr basic_expr next_expr simple_expr
 
 %%
 program: ml = nonempty_list(module_decl) EOF { ml }
@@ -138,82 +138,64 @@ ltl_specification: LTLSPEC le = ltl_expr option(SEMICOLON) { A.LtlSpec (mk_pos $
     ;
 
 (* General Purpose Rules *)
-(* dummy rule for parameter of pexpr to signal we allow quantifiers *)
-%inline ltl:
-  | { true }
-
-(* dummy rule for parameter of pexpr to signal we do not allow quantifiers *)
-%inline notltl:
-  | { false }
-
-ltl_expr:
-    | e = expr(ltl) { e }
+%inline ltl_expr:
+    | e = expr { A.LtlExpr(mk_pos $startpos, e) }
     ;
 
-basic_expr:
-    | e = expr(notltl) { e }
+%inline basic_expr:
+    | e = expr { A.BasicExpr(mk_pos $startpos, e) }
     ;
 
-expr(L):
+expr:
     | c = constant { c }
-    | fc = function_call { fc }
-    | NOT e = expr(L) { A.Not (mk_pos $startpos, e) }
-    | e1 = expr(L) AND e2 = expr(L) { A.And (mk_pos $startpos, e1, e2) }
-    | e1 = expr(L) OR e2 = expr(L) { A.Or (mk_pos $startpos, e1, e2) }
-    | e1 = expr(L) XOR e2 = expr(L) { A.Xor (mk_pos $startpos, e1, e2) }
-    | e1 = expr(L) XNOR e2 = expr(L) { A.Xnor (mk_pos $startpos, e1, e2) }
-    | e1 = expr(L) RARROW e2 = expr(L) { A.Impl (mk_pos $startpos, e1, e2) }
-    | e1 = expr(L) DARROW e2 = expr(L) { A.Equiv (mk_pos $startpos, e1, e2) }
-    | e1 = expr(L) EQ e2 = expr(L) { A.Eq (mk_pos $startpos, e1, e2)}
-    | e1 = expr(L) NEQ e2 = expr(L) { A.NotEq (mk_pos $startpos, e1, e2) }
-    | e1 = expr(L) LT e2 = expr(L) { A.Lt (mk_pos $startpos, e1, e2) }
-    | e1 = expr(L) GT e2 = expr(L) { A.Gt (mk_pos $startpos, e1, e2) }
-    | e1 = expr(L) LTE e2 = expr(L) { A.Lte (mk_pos $startpos, e1, e2) }
-    | e1 = expr(L) GTE e2 = expr(L) { A.Gte (mk_pos $startpos, e1, e2) }
-    | MINUS e = expr(L) { A.Uminus (mk_pos $startpos, e)}
-    | e1 = expr(L) PLUS e2 = expr(L) { A.Plus (mk_pos $startpos, e1, e2)}
-    | e1 = expr(L) MINUS e2 = expr(L) { A.Minus (mk_pos $startpos, e1, e2) }
-    | e1 = expr(L) MOD e2 = expr(L) { A.Mod (mk_pos $startpos, e1, e2) }
-    | LPAREN e = expr(L) RPAREN { e }
-    | LCURLBRACK el = separated_nonempty_list(COMMA, expr(L)) RCURLBRACK { A.SetExp (mk_pos $startpos, el) }
+    | NOT e = expr { A.Not (mk_pos $startpos, e) }
+    | e1 = expr AND e2 = expr { A.And (mk_pos $startpos, e1, e2) }
+    | e1 = expr OR e2 = expr { A.Or (mk_pos $startpos, e1, e2) }
+    | e1 = expr XOR e2 = expr { A.Xor (mk_pos $startpos, e1, e2) }
+    | e1 = expr XNOR e2 = expr { A.Xnor (mk_pos $startpos, e1, e2) }
+    | e1 = expr RARROW e2 = expr { A.Impl (mk_pos $startpos, e1, e2) }
+    | e1 = expr DARROW e2 = expr { A.Equiv (mk_pos $startpos, e1, e2) }
+    | e1 = expr EQ e2 = expr { A.Eq (mk_pos $startpos, e1, e2)}
+    | e1 = expr NEQ e2 = expr { A.NotEq (mk_pos $startpos, e1, e2) }
+    | e1 = expr LT e2 = expr { A.Lt (mk_pos $startpos, e1, e2) }
+    | e1 = expr GT e2 = expr { A.Gt (mk_pos $startpos, e1, e2) }
+    | e1 = expr LTE e2 = expr { A.Lte (mk_pos $startpos, e1, e2) }
+    | e1 = expr GTE e2 = expr { A.Gte (mk_pos $startpos, e1, e2) }
+    | MINUS e = expr { A.Uminus (mk_pos $startpos, e)}
+    | e1 = expr PLUS e2 = expr { A.Plus (mk_pos $startpos, e1, e2)}
+    | e1 = expr MINUS e2 = expr { A.Minus (mk_pos $startpos, e1, e2) }
+    | e1 = expr MOD e2 = expr { A.Mod (mk_pos $startpos, e1, e2) }
+    | LPAREN e = expr RPAREN { e }
+    | LCURLBRACK el = separated_nonempty_list(COMMA, expr) RCURLBRACK { A.SetExp (mk_pos $startpos, el) }
     | CASE cel = nonempty_list(case_element) ESAC { A.CaseExp (mk_pos $startpos, cel) }
-    | NEXT LPAREN e = expr(L) RPAREN { A.NextExp (mk_pos $startpos, e)}
-
+    | NEXT LPAREN e = expr RPAREN { A.NextExp (mk_pos $startpos, e)}
+    
     (* Ltl Expressions*)
         (* FUTURE *)
-    | X le = expr(L) { A.NextState (mk_pos $startpos, le) }
-    | G le = expr(L) { A.Globally (mk_pos $startpos, le) }
-    | F le = expr(L) { A.Finally (mk_pos $startpos, le) }
-    | le1 = expr(L) U le2 = expr(L) { A.Until (mk_pos $startpos, le1, le2) }
-    | le1 = expr(L) V le2 = expr(L) { A.Releases (mk_pos $startpos, le1, le2) }
+    | X le = expr { A.NextState (mk_pos $startpos, le) }
+    | G le = expr { A.Globally (mk_pos $startpos, le) }
+    | F le = expr { A.Finally (mk_pos $startpos, le) }
+    | le1 = expr U le2 = expr { A.Until (mk_pos $startpos, le1, le2) }
+    | le1 = expr V le2 = expr { A.Releases (mk_pos $startpos, le1, le2) }
         (* PAST *)
-    | Y le = expr(L) { A.PrevState (mk_pos $startpos, le) }
-    | Z le = expr(L) { A.NotPrevStateNot (mk_pos $startpos, le) }
-    | H le = expr(L) { A.Historically (mk_pos $startpos, le) }
-    | O le = expr(L) { A.Once (mk_pos $startpos, le) }
-    | le1 = expr(L) S le2 = expr(L) { A.Since (mk_pos $startpos, le1, le2) }
-    | le1 = expr(L) T le2 = expr(L) { A.Triggered (mk_pos $startpos, le1, le2) }
-    ;
-
-function_call: 
-    | ci = complex_indentifier LPAREN el = function_call_params RPAREN { A.Call (mk_pos $startpos, ci, el) }
-    ;
-
-function_call_params:
-    | e = basic_expr { [e] }
-    | e = basic_expr function_call_params  {e :: []}
+    | Y le = expr { A.PrevState (mk_pos $startpos, le) }
+    | Z le = expr { A.NotPrevStateNot (mk_pos $startpos, le) }
+    | H le = expr { A.Historically (mk_pos $startpos, le) }
+    | O le = expr { A.Once (mk_pos $startpos, le) }
+    | le1 = expr S le2 = expr { A.Since (mk_pos $startpos, le1, le2) }
+    | le1 = expr T le2 = expr { A.Triggered (mk_pos $startpos, le1, le2) }
     ;
 
 case_element:
-    | e1 = basic_expr COLON e2 = basic_expr SEMICOLON { (e1, e2) }
+    | e1 = expr COLON e2 = expr SEMICOLON { (e1, e2) }
     ;
 
 simple_expr: (* Note that simple expressions cannot contain next operators *)
-    | b = basic_expr { b }
+    | b = expr { A.SimpleExpr(mk_pos $startpos, b) }
     ;
 
 next_expr:
-    | b = basic_expr { b }
+    | b = expr { A.NextExpr(mk_pos $startpos, b) }
     ;
 
 basic_expr_list:
@@ -230,5 +212,5 @@ constant:
     | TRUE { A.True (mk_pos $startpos) }
     | s = ID { A.Ident (mk_pos $startpos, s) }
     | i = CINT { A.CInt (mk_pos $startpos, i) }
-    | i1 = basic_expr DPERIOD i2 = basic_expr { A.CRange (mk_pos $startpos, i1, i2) }
+    | i1 = CINT DPERIOD i2 = CINT { A.CRange (mk_pos $startpos, i1, i2) }
     ;

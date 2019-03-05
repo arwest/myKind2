@@ -23,7 +23,7 @@ type nuxmv_expr =
     | False of Position.t
     | CInt of Position.t * int
     | Ident of Position.t * ident
-    | CRange of Position.t * nuxmv_expr * nuxmv_expr
+    | CRange of Position.t * int * int
     | Call of Position.t * comp_ident * nuxmv_expr list
     | Not of Position.t * nuxmv_expr
     | And of Position.t * nuxmv_expr * nuxmv_expr
@@ -43,7 +43,6 @@ type nuxmv_expr =
     | Minus of Position.t * nuxmv_expr * nuxmv_expr
     | Mod of Position.t * nuxmv_expr * nuxmv_expr
     | SetExp of Position.t * nuxmv_expr list
-    | ArrayExp of Position.t * nuxmv_expr list
     | CaseExp of Position.t * (nuxmv_expr * nuxmv_expr) list
     | NextExp of Position.t * nuxmv_expr
     | NextState of Position.t * nuxmv_expr
@@ -61,8 +60,15 @@ type nuxmv_expr =
 and comp_ident = 
     | CIdent of Position.t * ident
     | PerIdent of Position.t * comp_ident * ident
-    | BrackIdent of Position.t * comp_ident * nuxmv_expr
+    | BrackIdent of Position.t * comp_ident * expr_type
     | Self of Position.t
+    
+and expr_type = 
+    | BasicExpr of Position.t * nuxmv_expr
+    | LtlExpr of Position.t * nuxmv_expr
+    | NextExpr of Position.t * nuxmv_expr
+    | SimpleExpr of Position.t * nuxmv_expr
+    | ArrayExp of Position.t * expr_type list
 
 type enum_type_value = 
     | ETId of Position.t * ident
@@ -75,27 +81,27 @@ type simple_type_spec =
     | EnumType of Position.t * (enum_type_value) list 
 
 type module_type_specifier = 
-    | ModuleTypeSpecifier of Position.t * ident * (nuxmv_expr list) option
+    | ModuleTypeSpecifier of Position.t * ident * (expr_type list) option
 
 type state_var_decl =
     | SimpleType of Position.t * ident * simple_type_spec
     | ModuleType of Position.t * ident * module_type_specifier
 
 type define_element = 
-    | SimpleDef of Position.t * ident * nuxmv_expr
-    | ArrayDef of Position.t * ident * nuxmv_expr
+    | SimpleDef of Position.t * ident * expr_type
+    | ArrayDef of Position.t * ident * expr_type
 
 type assign_const = 
-    | InitAssign of Position.t * comp_ident * nuxmv_expr 
-    | NextAssign of Position.t * comp_ident * nuxmv_expr 
-    | Assign of Position.t * comp_ident * nuxmv_expr 
+    | InitAssign of Position.t * comp_ident * expr_type 
+    | NextAssign of Position.t * comp_ident * expr_type 
+    | Assign of Position.t * comp_ident * expr_type 
 
 type module_element = 
     | StateVarDecl of Position.t * state_var_decl list
     | DefineDecl of Position.t * define_element list
     | AssignConst of Position.t * assign_const list
-    | TransConst of Position.t * nuxmv_expr
-    | LtlSpec of Position.t * nuxmv_expr
+    | TransConst of Position.t * expr_type
+    | LtlSpec of Position.t * expr_type
 
 type nuxmv_module = 
     | CustomModule of ident * (ident list) option * (module_element list) option

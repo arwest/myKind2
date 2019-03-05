@@ -21,6 +21,7 @@ type input = NuxmvAst.t
 type parse_error =
   | UnexpectedChar of Position.t * char
   | SyntaxError of Position.t
+  (* | LtlUseError of Position.t *)
 
 val from_channel: in_channel -> (input, parse_error) result
 
