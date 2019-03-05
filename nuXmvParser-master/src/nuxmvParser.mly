@@ -60,7 +60,11 @@ exception Ltl_Use_Error
 %%
 program: ml = nonempty_list(module_decl) EOF { ml }
 
-module_decl: MODULE id = ID mp = option(module_params) mb = option(module_body) { A.CustomModule (id, mp, mb) }  
+module_decl: MODULE id = ID mp = option(module_params) mb = option(module_body) { match (mp,mb) with 
+                                                                                  | (None, None)     -> A.CustomModule (id, [], [])
+                                                                                  | (Some p, None)   -> A.CustomModule (id, p, [])
+                                                                                  | (None, Some b)   -> A.CustomModule (id, [], b)
+                                                                                  | (Some p, Some b) -> A.CustomModule (id, p, b) }  
 
 module_params: LPAREN mpl = separated_nonempty_list(COMMA, ID) RPAREN { mpl } 
 
@@ -95,7 +99,9 @@ enum_type_value:
     ;
 
 module_type_spec:
-    | id = ID pl = option(module_type_spec_param_list) { A.ModuleTypeSpecifier (mk_pos $startpos, id, pl)}
+    | id = ID pl = option(module_type_spec_param_list) { match pl with 
+                                                         | None -> A.ModuleTypeSpecifier (mk_pos $startpos, id, [])
+                                                         | Some p -> A.ModuleTypeSpecifier (mk_pos $startpos, id, p) }
     ;
 
 module_type_spec_param_list:

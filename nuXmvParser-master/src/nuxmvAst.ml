@@ -104,7 +104,7 @@ type simple_type_spec =
     | EnumType of Position.t * (enum_type_value) list (* Assert that it is either an indent or cint*)
 
 type module_type_specifier = 
-    | ModuleTypeSpecifier of Position.t * ident * (expr_type list) option
+    | ModuleTypeSpecifier of Position.t * ident * expr_type list
 
 type state_var_decl =
     | SimpleType of Position.t * ident * simple_type_spec
@@ -127,7 +127,7 @@ type module_element =
     | LtlSpec of Position.t * expr_type
 
 type nuxmv_module = 
-    | CustomModule of ident * (ident list) option * (module_element list) option
+    | CustomModule of ident * ident list * module_element list
 
 (* A nuxmv program *)
 type t = nuxmv_module list
