@@ -27,6 +27,12 @@ let read_input_from_file filename =
   | Error (NuxmvInput.SyntaxError pos) ->
       Format.eprintf "%a: syntax error@." Position.pp_print_position pos
 
+  | Error (NuxmvInput.LtlUseError pos) ->
+      Format.eprintf "%a: ltl expression use error@." Position.pp_print_position pos
+
+  | Error (NuxmvInput.NextExprError pos) ->
+      Format.eprintf "%a: next expression use error@." Position.pp_print_position pos
+
   | exception (Sys_error msg) ->
       Format.eprintf "%s@." msg
 

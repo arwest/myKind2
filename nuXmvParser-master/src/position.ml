@@ -37,3 +37,10 @@ let create_position position =
     line = pos.Lexing.pos_lnum ; 
     col = pos.Lexing.pos_cnum - pos.Lexing.pos_bol + 1 
   }
+
+let create_empty_position =
+  {
+    fname = "" ;
+    line = 0; 
+    col = 0 
+  }

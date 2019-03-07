@@ -21,18 +21,23 @@ type input = NuxmvAst.t
 type parse_error =
   | UnexpectedChar of Position.t * char
   | SyntaxError of Position.t
-  (* | LtlUseError of Position.t *)
+  | LtlUseError of Position.t
+  | NextExprError of Position.t
 
 let parse_buffer lexbuf =
   try
+    (* let abstract_syntax = NuxmvParser.program NuxmvLexer.token lexbuf in
+        let semantic_result = NuxmvChecker.semantic_eval abstract_syntax in
+        match semantic_result with
+        | NuxmvChecker.Ok -> Ok (NuxmvParser.program NuxmvLexer.token lexbuf)
+        | NuxmvChecker.Error (pos, LtlUse)-> Error (LtlUseError pos)
+        | NuxmvChecker.Error (pos, NextExpr) -> Error (NextExprError pos) *)
     Ok (NuxmvParser.program NuxmvLexer.token lexbuf)
   with 
   | NuxmvLexer.Unexpected_Char c ->
     let pos = Position.get_position lexbuf in Error (UnexpectedChar (pos, c))
   | NuxmvParser.Error ->
     let pos = Position.get_position lexbuf in Error (SyntaxError pos)
-  (* | NuxmvParser.Ltl_Use_Error ->
-    let pos = Position.get_position lexbuf in Error (LtlUseError pos) *)
 
 
 let from_channel in_ch =
