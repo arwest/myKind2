@@ -25,11 +25,12 @@ type nuxmv_expr =
     | True of Position.t
     | False of Position.t
     | CInt of Position.t * int
+    | CFloat of Position.t * float
     | Ident of Position.t * ident
     | CRange of Position.t * int * int (* Make sure the expressions returned are ints *)
 
     (* Function Call *)
-    | Call of Position.t * comp_ident * nuxmv_expr list
+    | Call of Position.t * comp_ident * expr_type list
 
     (* Boolean operators *)
     | Not of Position.t * nuxmv_expr
@@ -52,6 +53,8 @@ type nuxmv_expr =
     | Plus of Position.t * nuxmv_expr * nuxmv_expr
     | Uminus of Position.t * nuxmv_expr
     | Minus of Position.t * nuxmv_expr * nuxmv_expr
+    | Multiply of Position.t * nuxmv_expr * nuxmv_expr
+    | Divide of Position.t * nuxmv_expr * nuxmv_expr
     | Mod of Position.t * nuxmv_expr * nuxmv_expr
     
     (* Set Expression *)
@@ -86,7 +89,6 @@ and comp_ident =
     | Self of Position.t
     
 and expr_type = 
-    | BasicExpr of Position.t * nuxmv_expr
     | LtlExpr of Position.t * nuxmv_expr
     | NextExpr of Position.t * nuxmv_expr
     | SimpleExpr of Position.t * nuxmv_expr
@@ -100,6 +102,7 @@ type enum_type_value =
 type simple_type_spec = 
     | Bool of Position.t
     | Int of Position.t
+    | Real of Position.t
     | IntRange of Position.t * int * int
     | EnumType of Position.t * (enum_type_value) list (* Assert that it is either an indent or cint*)
 

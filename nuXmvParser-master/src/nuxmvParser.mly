@@ -30,12 +30,14 @@ exception Ltl_Use_Error
 %token X G F U V Y Z H O S T
 %token <string> ID
 %token <int> CINT
-%token BOOL INT
+%token <float> CREAL
+%token FRACTIONAL
+%token BOOL INT REAL
 %token TRUE FALSE
 %token EQ NEQ LT GT LTE GTE
 %token RARROW DARROW
 %token AND NOT OR XOR XNOR
-%token PLUS MINUS MOD
+%token PLUS MINUS MOD MUL DIV
 %token NEXT INIT CASE ESAC
 %token SELF
 %token ASSIGNMENT
@@ -49,13 +51,13 @@ exception Ltl_Use_Error
 %left  OR XOR XNOR
 %left  AND
 %left  EQ NEQ LT GT LTE GTE
-%left  MOD
 %left  PLUS MINUS
+%left  MUL DIV MOD
 %left  NOT
 %nonassoc X G F U V Y Z H O S T
 
 %start<NuxmvAst.t> program
-%type<NuxmvAst.expr_type> ltl_expr basic_expr next_expr simple_expr
+%type<NuxmvAst.expr_type> ltl_expr next_expr simple_expr
 
 %%
 program: ml = nonempty_list(module_decl) EOF { ml }
@@ -89,6 +91,7 @@ state_var_element:
 simple_type_specifier:
     | BOOL { A.Bool (mk_pos $startpos) }
     | INT { A.Int (mk_pos $startpos) }
+    | REAL { A.Real (mk_pos $startpos) }
     | i1 = CINT DPERIOD i2 = CINT { A.IntRange (mk_pos $startpos, i1, i2) }
     | LCURLBRACK etvl = separated_nonempty_list(COMMA, enum_type_value) RCURLBRACK { A.EnumType (mk_pos $startpos, etvl) }
     ;
@@ -131,7 +134,7 @@ assign_element:
 complex_indentifier:
     | i = ID { A.CIdent (mk_pos $startpos, i) }
     | ci = complex_indentifier PERIOD i = ID { A.PerIdent (mk_pos $startpos, ci, i) }
-    | ci = complex_indentifier LSQBRACK e = basic_expr RSQBRACK { BrackIdent (mk_pos $startpos, ci, e) }
+    | ci = complex_indentifier LSQBRACK e = simple_expr RSQBRACK { BrackIdent (mk_pos $startpos, ci, e) }
     | SELF { A.Self (mk_pos $startpos) }
     ;
 
@@ -143,17 +146,23 @@ trans_constraint: TRANS e = next_expr option(SEMICOLON) { A.TransConst (mk_pos $
 ltl_specification: LTLSPEC le = ltl_expr option(SEMICOLON) { A.LtlSpec (mk_pos $startpos, le) }
     ;
 
-(* General Purpose Rules *)
+(* Expression Types *)
 %inline ltl_expr:
     | e = expr { A.LtlExpr(mk_pos $startpos, e) }
     ;
 
-%inline basic_expr:
-    | e = expr { A.BasicExpr(mk_pos $startpos, e) }
+%inline simple_expr: (* Note that simple expressions cannot contain next operators *)
+    | b = expr { A.SimpleExpr(mk_pos $startpos, b) }
     ;
 
+%inline next_expr:
+    | b = expr { A.NextExpr(mk_pos $startpos, b) }
+    ;
+
+(* General Purpose Rules *)
 expr:
     | c = constant { c }
+    | f = function_call { f }
     | NOT e = expr { A.Not (mk_pos $startpos, e) }
     | e1 = expr AND e2 = expr { A.And (mk_pos $startpos, e1, e2) }
     | e1 = expr OR e2 = expr { A.Or (mk_pos $startpos, e1, e2) }
@@ -170,6 +179,8 @@ expr:
     | MINUS e = expr { A.Uminus (mk_pos $startpos, e)}
     | e1 = expr PLUS e2 = expr { A.Plus (mk_pos $startpos, e1, e2)}
     | e1 = expr MINUS e2 = expr { A.Minus (mk_pos $startpos, e1, e2) }
+    | e1 = expr MUL e2 = expr { A.Multiply (mk_pos $startpos, e1, e2)}
+    | e1 = expr DIV e2 = expr { A.Divide (mk_pos $startpos, e1, e2) }
     | e1 = expr MOD e2 = expr { A.Mod (mk_pos $startpos, e1, e2) }
     | LPAREN e = expr RPAREN { e }
     | LCURLBRACK el = separated_nonempty_list(COMMA, expr) RCURLBRACK { A.SetExp (mk_pos $startpos, el) }
@@ -196,16 +207,17 @@ case_element:
     | e1 = expr COLON e2 = expr SEMICOLON { (e1, e2) }
     ;
 
-simple_expr: (* Note that simple expressions cannot contain next operators *)
-    | b = expr { A.SimpleExpr(mk_pos $startpos, b) }
+function_call: 
+    | ci = complex_indentifier LPAREN el = function_call_params RPAREN { A.Call (mk_pos $startpos, ci, el) }
     ;
 
-next_expr:
-    | b = expr { A.NextExpr(mk_pos $startpos, b) }
+function_call_params:
+    | e = next_expr { [e] }
+    | e = next_expr COMMA p = function_call_params  {e :: p}
     ;
 
 basic_expr_list:
-    | el = separated_nonempty_list(COMMA, basic_expr) { el }
+    | el = separated_nonempty_list(COMMA, simple_expr) { el }
     ;
 
 array_expr:
@@ -218,5 +230,9 @@ constant:
     | TRUE { A.True (mk_pos $startpos) }
     | s = ID { A.Ident (mk_pos $startpos, s) }
     | i = CINT { A.CInt (mk_pos $startpos, i) }
+    | r = CREAL { A.CFloat (mk_pos $startpos, r) }
+    | FRACTIONAL c1 = CINT DIV c2 = CINT { let f1 = float_of_int (c1) in
+                                           let f2 = float_of_int (c2) in
+                                                A.CFloat (mk_pos $startpos, (f1 /. f2)) }
     | i1 = CINT DPERIOD i2 = CINT { A.CRange (mk_pos $startpos, i1, i2) }
     ;
