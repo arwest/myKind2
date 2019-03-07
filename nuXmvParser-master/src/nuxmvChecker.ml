@@ -24,7 +24,7 @@ type semantic_error_type =
 
 type 'a check_result = 
     | Ok
-    | Error of 'a
+    | Error of Position.t * 'a
 
 let empty_pos = Position.create_empty_position
 

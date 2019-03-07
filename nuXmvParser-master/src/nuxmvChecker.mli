@@ -22,6 +22,6 @@ type semantic_error_type =
 
 type 'a check_result = 
     | Ok
-    | Error of 'a
+    | Error of Position.t * 'a
 
-val semantic_eval: NuxmvAst.t -> (Position.t * semantic_error_type) check_result
+val semantic_eval: NuxmvAst.t ->  semantic_error_type check_result
