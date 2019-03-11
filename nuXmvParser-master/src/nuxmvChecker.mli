@@ -19,9 +19,11 @@
 type semantic_error_type = 
     | LtlUse
     | NextExpr
+    | DoubleNextExpr
+    | RangeLowerValue
 
 type 'a check_result = 
-    | Ok
-    | Error of Position.t * 'a
+    | CheckOk
+    | CheckError of Position.t * 'a
 
 val semantic_eval: NuxmvAst.t ->  semantic_error_type check_result
