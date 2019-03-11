@@ -23,16 +23,20 @@ type parse_error =
   | SyntaxError of Position.t
   | LtlUseError of Position.t
   | NextExprError of Position.t
+  | DoubleNextExprError of Position.t
+  | RangeLowerValueError of Position.t
 
 let parse_buffer lexbuf =
   try
-    (* let abstract_syntax = NuxmvParser.program NuxmvLexer.token lexbuf in
-        let semantic_result = NuxmvChecker.semantic_eval abstract_syntax in
+    let abstract_syntax = NuxmvParser.program NuxmvLexer.token lexbuf in
+        (* let semantic_result = NuxmvChecker.semantic_eval abstract_syntax in
         match semantic_result with
-        | NuxmvChecker.Ok -> Ok (NuxmvParser.program NuxmvLexer.token lexbuf)
-        | NuxmvChecker.Error (pos, LtlUse)-> Error (LtlUseError pos)
-        | NuxmvChecker.Error (pos, NextExpr) -> Error (NextExprError pos) *)
-    Ok (NuxmvParser.program NuxmvLexer.token lexbuf)
+        | NuxmvChecker.CheckOk -> Ok (NuxmvParser.program NuxmvLexer.token lexbuf)
+        | NuxmvChecker.CheckError (pos, LtlUse)-> Error (LtlUseError pos)
+        | NuxmvChecker.CheckError (pos, NextExpr) -> Error (NextExprError pos)
+        | NuxmvChecker.CheckError (pos, DoubleNextExpr) -> Error (DoubleNextExprError pos)
+        | NuxmvChecker.CheckError (pos, RangeLowerValue) -> Error (RangeLowerValueError pos) *)
+        Ok (abstract_syntax)
   with 
   | NuxmvLexer.Unexpected_Char c ->
     let pos = Position.get_position lexbuf in Error (UnexpectedChar (pos, c))

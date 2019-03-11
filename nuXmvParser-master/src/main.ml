@@ -28,11 +28,21 @@ let read_input_from_file filename =
       Format.eprintf "%a: syntax error@." Position.pp_print_position pos
 
   | Error (NuxmvInput.LtlUseError pos) ->
-      Format.eprintf "%a: ltl expression use error@." Position.pp_print_position pos
+      Format.eprintf "%a: ltl expression use error@." 
+        Position.pp_print_position pos
 
   | Error (NuxmvInput.NextExprError pos) ->
-      Format.eprintf "%a: next expression use error@." Position.pp_print_position pos
-
+      Format.eprintf "%a: next expression use error@." 
+        Position.pp_print_position pos
+  
+  | Error (NuxmvInput.DoubleNextExprError pos) ->
+      Format.eprintf "%a: Cannot use next expression in side a next expression@." 
+        Position.pp_print_position pos
+  
+  | Error (NuxmvInput.RangeLowerValueError pos) ->
+      Format.eprintf "%a: Lower bound of range must be less than or equal to upper bound@." 
+        Position.pp_print_position pos
+  
   | exception (Sys_error msg) ->
       Format.eprintf "%s@." msg
 

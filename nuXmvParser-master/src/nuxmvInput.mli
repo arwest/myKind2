@@ -23,6 +23,8 @@ type parse_error =
   | SyntaxError of Position.t
   | LtlUseError of Position.t
   | NextExprError of Position.t
+  | DoubleNextExprError of Position.t
+  | RangeLowerValueError of Position.t
 
 val from_channel: in_channel -> (input, parse_error) result
 
