@@ -27,10 +27,10 @@ type nuxmv_expr =
     | CInt of Position.t * int
     | CFloat of Position.t * float
     | Ident of Position.t * ident
-    | CRange of Position.t * int * int (* Make sure the expressions returned are ints *)
+    | CRange of Position.t * int * int
 
     (* Function Call *)
-    | Call of Position.t * comp_ident * expr_type list
+    | Call of Position.t * comp_ident * nuxmv_expr list
 
     (* Boolean operators *)
     | Not of Position.t * nuxmv_expr
@@ -65,7 +65,6 @@ type nuxmv_expr =
 
     (* Next Expression*)
     | NextExp of Position.t * nuxmv_expr
-    
     (* Ltl Operations *)
         (* FUTURE *)
     | NextState of Position.t * nuxmv_expr
@@ -93,7 +92,7 @@ and expr_type =
     | NextExpr of Position.t * nuxmv_expr
     | SimpleExpr of Position.t * nuxmv_expr
     (* Array Expression*)
-    | ArrayExp of Position.t * expr_type list
+    | ArrayExpr of Position.t * expr_type list
 
 type enum_type_value = 
     | ETId of Position.t * ident

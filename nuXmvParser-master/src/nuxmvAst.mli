@@ -25,7 +25,7 @@ type nuxmv_expr =
     | CFloat of Position.t * float
     | Ident of Position.t * ident
     | CRange of Position.t * int * int
-    | Call of Position.t * comp_ident * expr_type list
+    | Call of Position.t * comp_ident * nuxmv_expr list
     | Not of Position.t * nuxmv_expr
     | And of Position.t * nuxmv_expr * nuxmv_expr
     | Or of Position.t * nuxmv_expr * nuxmv_expr
@@ -70,7 +70,7 @@ and expr_type =
     | LtlExpr of Position.t * nuxmv_expr
     | NextExpr of Position.t * nuxmv_expr
     | SimpleExpr of Position.t * nuxmv_expr
-    | ArrayExp of Position.t * expr_type list
+    | ArrayExpr of Position.t * expr_type list
 
 type enum_type_value = 
     | ETId of Position.t * ident
@@ -110,5 +110,4 @@ type nuxmv_module =
     | CustomModule of ident * ident list * module_element list
 
 type t = nuxmv_module list
-
 
