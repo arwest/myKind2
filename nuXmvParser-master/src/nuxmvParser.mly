@@ -212,8 +212,8 @@ function_call:
     ;
 
 function_call_params:
-    | e = next_expr { [e] }
-    | e = next_expr COMMA p = function_call_params  {e :: p}
+    | e = expr { [e] }
+    | e = expr COMMA p = function_call_params  {e :: p}
     ;
 
 basic_expr_list:
@@ -221,8 +221,8 @@ basic_expr_list:
     ;
 
 array_expr:
-    | LSQBRACK el = separated_nonempty_list(COMMA, next_expr) RSQBRACK { A.ArrayExp (mk_pos $startpos, el) }
-    | LSQBRACK al =  separated_nonempty_list(COMMA, array_expr) RSQBRACK { A.ArrayExp (mk_pos $startpos, al) }
+    | LSQBRACK el = separated_nonempty_list(COMMA, next_expr) RSQBRACK { A.ArrayExpr (mk_pos $startpos, el) }
+    | LSQBRACK al =  separated_nonempty_list(COMMA, array_expr) RSQBRACK { A.ArrayExpr (mk_pos $startpos, al) }
     ;
 
 constant:
