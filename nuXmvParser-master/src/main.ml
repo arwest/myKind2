@@ -18,7 +18,9 @@
 
 let read_input_from_file filename =
   match NuxmvInput.from_file filename with
-  | Ok _ -> Format.printf "No errors found!@."
+  | Ok res -> (match res with
+              | [] -> Format.printf "AST is empty@."
+              | NuxmvAst.CustomModule _ :: t -> Format.printf "AST is not empty@.")
 
   | Error (NuxmvInput.UnexpectedChar (pos, c)) ->
       Format.eprintf "%a: error: unexpected character ‘%c’@."
