@@ -1,0 +1,56 @@
+### Starting build.
+# Target: src/main.ml.depends, tags: { explain, extension:ml, file:src/main.ml, ocaml, ocamldep, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamldep.opt -modules src/main.ml > src/main.ml.depends
+# Target: src/nuxmvAst.mli.depends, tags: { explain, extension:mli, file:src/nuxmvAst.mli, ocaml, ocamldep, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamldep.opt -modules src/nuxmvAst.mli > src/nuxmvAst.mli.depends # cached
+# Target: src/position.mli.depends, tags: { explain, extension:mli, file:src/position.mli, ocaml, ocamldep, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamldep.opt -modules src/position.mli > src/position.mli.depends # cached
+# Target: src/position.cmi, tags: { byte, compile, explain, extension:mli, file:src/position.mli, interf, ocaml, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamlc.opt -c -I src -o src/position.cmi src/position.mli # cached
+# Target: src/nuxmvAst.cmi, tags: { byte, compile, explain, extension:mli, file:src/nuxmvAst.mli, interf, ocaml, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamlc.opt -c -I src -o src/nuxmvAst.cmi src/nuxmvAst.mli # cached
+# Target: src/nuxmvInput.mli.depends, tags: { explain, extension:mli, file:src/nuxmvInput.mli, ocaml, ocamldep, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamldep.opt -modules src/nuxmvInput.mli > src/nuxmvInput.mli.depends # cached
+# Target: src/nuxmvInput.cmi, tags: { byte, compile, explain, extension:mli, file:src/nuxmvInput.mli, interf, ocaml, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamlc.opt -c -I src -o src/nuxmvInput.cmi src/nuxmvInput.mli # cached
+# Target: src/main.cmo, tags: { byte, compile, explain, extension:cmo, extension:ml, file:src/main.cmo, file:src/main.ml, implem, ocaml, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamlc.opt -c -I src -o src/main.cmo src/main.ml
+# Target: src/nuxmvAst.ml.depends, tags: { explain, extension:ml, file:src/nuxmvAst.ml, ocaml, ocamldep, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamldep.opt -modules src/nuxmvAst.ml > src/nuxmvAst.ml.depends # cached
+# Target: src/position.ml.depends, tags: { explain, extension:ml, file:src/position.ml, ocaml, ocamldep, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamldep.opt -modules src/position.ml > src/position.ml.depends # cached
+# Target: src/position.cmx, tags: { compile, explain, extension:cmx, extension:ml, file:src/position.cmx, file:src/position.ml, implem, native, ocaml, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamlopt.opt -c -I src -o src/position.cmx src/position.ml # cached
+# Target: src/nuxmvAst.cmx, tags: { compile, explain, extension:cmx, extension:ml, file:src/nuxmvAst.cmx, file:src/nuxmvAst.ml, implem, native, ocaml, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamlopt.opt -c -I src -o src/nuxmvAst.cmx src/nuxmvAst.ml # cached
+# Target: src/nuxmvInput.ml.depends, tags: { explain, extension:ml, file:src/nuxmvInput.ml, ocaml, ocamldep, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamldep.opt -modules src/nuxmvInput.ml > src/nuxmvInput.ml.depends # cached
+# Target: src/nuxmvLexer.mll, tags: { explain, extension:mll, file:src/nuxmvLexer.mll, lexer, ocaml, ocamllex, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamllex.opt -q src/nuxmvLexer.mll # cached
+# Target: src/nuxmvLexer.ml.depends, tags: { explain, extension:ml, file:src/nuxmvLexer.ml, ocaml, ocamldep, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamldep.opt -modules src/nuxmvLexer.ml > src/nuxmvLexer.ml.depends # cached
+# Target: src/nuxmvLexer.mli.depends, tags: { explain, extension:mli, file:src/nuxmvLexer.mli, ocaml, ocamldep, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamldep.opt -modules src/nuxmvLexer.mli > src/nuxmvLexer.mli.depends # cached
+# Target: src/nuxmvParser.mly.depends, tags: { explain, extension:mly, file:src/nuxmvParser.mly, infer, menhir_ocamldep, ocaml, ocamldep, quiet, traverse }
+menhir --raw-depend --ocamldep '/usr/local/bin/_opam/bin/ocamldep.opt -modules' src/nuxmvParser.mly > src/nuxmvParser.mly.depends # cached
+# Target: src/nuxmvParser.mly, tags: { byte, compile, explain, extension:ml, extension:mly, file:src/nuxmvParser.ml, file:src/nuxmvParser.mly, infer, menhir, ocaml, parser, quiet, traverse }
+menhir --ocamlc '/usr/local/bin/_opam/bin/ocamlc.opt -I src' --explain --infer src/nuxmvParser.mly # cached
+# Target: src/nuxmvParser.mli.depends, tags: { explain, extension:mli, file:src/nuxmvParser.mli, ocaml, ocamldep, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamldep.opt -modules src/nuxmvParser.mli > src/nuxmvParser.mli.depends # cached
+# Target: src/nuxmvParser.cmi, tags: { byte, compile, explain, extension:mli, file:src/nuxmvParser.mli, interf, ocaml, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamlc.opt -c -I src -o src/nuxmvParser.cmi src/nuxmvParser.mli # cached
+# Target: src/nuxmvLexer.cmi, tags: { byte, compile, explain, extension:mli, file:src/nuxmvLexer.mli, interf, ocaml, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamlc.opt -c -I src -o src/nuxmvLexer.cmi src/nuxmvLexer.mli # cached
+# Target: src/nuxmvParser.ml.depends, tags: { explain, extension:ml, file:src/nuxmvParser.ml, ocaml, ocamldep, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamldep.opt -modules src/nuxmvParser.ml > src/nuxmvParser.ml.depends # cached
+# Target: src/nuxmvParser.cmx, tags: { compile, explain, extension:cmx, extension:ml, file:src/nuxmvParser.cmx, file:src/nuxmvParser.ml, implem, native, ocaml, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamlopt.opt -c -I src -o src/nuxmvParser.cmx src/nuxmvParser.ml # cached
+# Target: src/nuxmvLexer.cmx, tags: { compile, explain, extension:cmx, extension:ml, file:src/nuxmvLexer.cmx, file:src/nuxmvLexer.ml, implem, native, ocaml, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamlopt.opt -c -I src -o src/nuxmvLexer.cmx src/nuxmvLexer.ml # cached
+# Target: src/nuxmvInput.cmx, tags: { compile, explain, extension:cmx, extension:ml, file:src/nuxmvInput.cmx, file:src/nuxmvInput.ml, implem, native, ocaml, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamlopt.opt -c -I src -o src/nuxmvInput.cmx src/nuxmvInput.ml # cached
+# Target: src/main.cmx, tags: { compile, explain, extension:cmx, extension:ml, file:src/main.cmx, file:src/main.ml, implem, native, ocaml, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamlopt.opt -c -I src -o src/main.cmx src/main.ml
+# Target: src/main.native, tags: { dont_link_with, explain, extension:native, file:src/main.native, link, native, ocaml, program, quiet, traverse }
+/usr/local/bin/_opam/bin/ocamlopt.opt -I src src/position.cmx src/nuxmvAst.cmx src/nuxmvParser.cmx src/nuxmvLexer.cmx src/nuxmvInput.cmx src/main.cmx -o src/main.native
+# Compilation successful.
