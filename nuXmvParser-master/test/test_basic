@@ -25,3 +25,16 @@ P_6 : boolean ;
 P_7 : boolean ;
 P_8 : boolean ;
 P_9 : boolean ;
+
+ue_state	:
+{
+	ue_1,
+    unknown_id,
+    P_0
+};
+
+
+DEFINE
+
+ue_T1   :=	 (P_0)	;
+ue_T2	:=	 (ue_state = ue_1)	;
