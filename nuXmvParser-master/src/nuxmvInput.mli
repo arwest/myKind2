@@ -16,7 +16,7 @@
 
 (** @author Daniel Larraz *)
 
-type input = NuxmvAst.t
+type output = (unit, Format.formatter, unit) format
 
 type parse_error =
   | UnexpectedChar of Position.t * char
@@ -25,8 +25,12 @@ type parse_error =
   | NextExprError of Position.t
   | DoubleNextExprError of Position.t
   | RangeLowerValueError of Position.t
+  | ExpectedTypeError of Position.t (* *nuxmv_ast_type list * nuxmv_ast_type *)
+  | NonMatchingTypeError of Position.t (* *nuxmv_ast_type * nuxmv_ast_type *)
+  | MissingVariableError of Position.t (* *string *)
+  | AssignTypeError of Position.t (* *nuxmv_ast_type * nuxmv_ast_type *)
 
-val from_channel: in_channel -> (input, parse_error) result
+val from_channel: in_channel -> (output, parse_error) result
 
-val from_file: string -> (input, parse_error) result
+val from_file: string -> (output, parse_error) result
 
