@@ -26,6 +26,7 @@ type semantic_error_type =
 
 type nuxmv_ast_type = 
     | IntT
+    | SymbolicT
     | FloatT
     | RangeT
     | EnumT of nuxmv_ast_type list
@@ -41,6 +42,7 @@ type type_error =
     | NonMatching of Position.t * nuxmv_ast_type * nuxmv_ast_type
     | MissingVariable of Position.t * string
     | AssignType of Position.t * nuxmv_ast_type * nuxmv_ast_type
+    | SymbolicType of Position.t * string
 
 type env = (string * nuxmv_ast_type) list
 
@@ -479,23 +481,39 @@ let rec t_eval_expr_type (env : env) (expr_type: A.expr_type) : ((nuxmv_ast_type
     | A.LtlExpr (p, expr) -> (match t_eval_expr env expr with
                              | Ok BoolT -> (Ok BoolT, env)
                              | Ok t -> (Error (Expected (p, [BoolT], t)), env)
-                             | e -> (e, env))
+                             | e -> (e, []))
     | A.NextExpr (_, expr) -> (match t_eval_expr env expr with
                               | Ok t -> (Ok t, env)
-                              | e -> (e, env))
+                              | e -> (e, []))
     | A.SimpleExpr (_, expr) ->(match t_eval_expr env expr with
                                | Ok t -> (Ok t, env)
-                               | e -> (e, env))
+                               | e -> (e, []))
     | A.ArrayExpr (_, etl) -> let result_list = List.map fst (List.map (t_eval_expr_type env) etl) in
                               match List.find_opt (fun x -> match x with | Ok _ -> false | Error _ -> true) result_list with
-                              | Some e -> (e, env)
+                              | Some e -> (e, [])
                               | None -> (Ok (ArrayT (List.map (fun x -> match x with Ok t -> t) result_list)), env)
 
 let rec t_eval_complex_id (env : env) (ci: A.comp_ident):  ((nuxmv_ast_type, type_error) result  * env) =
     match ci with
-    | CIdent (pos, id) -> match List.find_opt (fun x -> match x with (s,t) when s = id -> true | _ -> false) env with
+    | CIdent (pos, id) -> (match List.find_opt (fun x -> match x with (s,t) when s = id -> true | _ -> false) env with
                          | Some (s,t) -> (Ok t, env)
-                         | None -> (Error (MissingVariable (pos, id)), env)
+                         | None -> (Error (MissingVariable (pos, id)), []))
+
+let rec t_eval_enum_var_decl (env: env) (etvl: A.enum_type_value list) : (((nuxmv_ast_type * env), type_error) result) list=
+    match etvl with
+    | [] -> []
+    | etv :: tail ->(match etv with 
+                    | A.ETId (pos, id) -> (let newEnv = ( (id, SymbolicT) :: env) in
+                                            match 
+                                                List.find_all 
+                                                (fun x -> match x with (s,t) when s = id -> true | _ -> false) 
+                                                newEnv 
+                                            with
+                                            | [] -> (Error (MissingVariable (pos, id))) :: []
+                                            | l -> match List.find_opt (fun x -> match x with (_,SymbolicT) -> false | _ -> true) l with
+                                                    | Some _ -> (Error (SymbolicType (pos, id))) :: []
+                                                    | None -> Ok (SymbolicT, newEnv) :: (t_eval_enum_var_decl newEnv tail))
+                    | A.ETCInt _ -> Ok (IntT, env) :: (t_eval_enum_var_decl env tail))
 
 let rec t_eval_state_var_decl (env : env) (svdl: A.state_var_decl list) :  (type_error check_result * env) =
     match svdl with
@@ -507,7 +525,7 @@ let rec t_eval_state_var_decl (env : env) (svdl: A.state_var_decl list) :  (type
                             let mapped = List.map fst (List.map (t_eval_expr_type env) etl) in
                             let result = List.find_opt (fun x -> match x with Ok _ -> false | Error _ -> true) mapped in
                             match result with
-                            | Some Error e -> (CheckError e, env)
+                            | Some Error e -> (CheckError e, [])
                             | None -> (CheckOk, env)) (* TODO: How to do module calling, skipping this for now *) 
                     | SimpleType (p, i, sts) -> 
                         (match sts with
@@ -515,27 +533,27 @@ let rec t_eval_state_var_decl (env : env) (svdl: A.state_var_decl list) :  (type
                             | Int _ -> (CheckOk, (i, BoolT) :: env)
                             | Real _ -> (CheckOk, (i, BoolT) :: env)
                             | IntRange _ -> (CheckOk, (i, BoolT) :: env)
+                            (* Figure out what the problem with checking the id's in the declaration and calling the top level id ... *)
                             | EnumType (p, etvl) -> 
-                                (let mapped = 
-                                    List.map 
-                                    (fun x -> match x with | A.ETId (pos, id) -> t_eval_expr env (Ident(pos, id)) | A.ETCInt _ -> Ok IntT)
-                                    etvl in
-                                match List.find_opt (fun x -> match x with | Ok _ -> false | Error _ -> true) mapped with
-                                | Some (Error e) -> (CheckError e, env)
-                                | None -> t_eval_state_var_decl ((i, EnumT (List.map (fun x -> match x with Ok t -> t) mapped))  :: env) t)
+                                (let mapped = t_eval_enum_var_decl env etvl in
+                                let newEnv = List.hd (List.rev_map (fun x -> match x with Ok t -> snd t) mapped) in
+                                (* let newEnv = List.hd (List.map (fun x -> match x with Ok t -> snd t) mapped) in *)
+                                match List.find_opt (fun x -> match x with Error _ -> true | _ -> false) mapped with
+                                | Some (Error e) -> (CheckError e, [])
+                                | None -> t_eval_state_var_decl ((i, EnumT (List.map (fun x -> match x with Ok t -> fst t) mapped)) :: newEnv) t)
                         )
                     )
 
 let rec t_eval_define_decl (env : env) (del: A.define_element list):  (type_error check_result * env) =
     match del with
     | [] -> (CheckOk, env)
-    | svd :: t -> match svd with
+    | svd :: tail -> match svd with
                   | SimpleDef (pos, id, et) -> (match t_eval_expr_type env et with
-                                               | (Ok ty, env' ) -> t_eval_define_decl ((id, ty) :: env') t
-                                               | (Error e, env') -> (CheckError e, env') )
+                                               | (Ok t, env' ) -> t_eval_define_decl ((id, t) :: env') tail
+                                               | (Error e, _) -> (CheckError e, []) )
                   | ArrayDef (pos, id, et) -> (match t_eval_expr_type env et with
-                                               | (Ok ty, env' ) -> t_eval_define_decl ((id, ty) :: env') t
-                                               | (Error e, env' ) -> (CheckError e, env') )
+                                               | (Ok t, env' ) -> t_eval_define_decl ((id, t) :: env') tail
+                                               | (Error e, _ ) -> (CheckError e, []) )
 
 let rec t_eval_assign_const (env : env) (acl: A.assign_const list): (type_error check_result * env) =
     match acl with
@@ -544,18 +562,18 @@ let rec t_eval_assign_const (env : env) (acl: A.assign_const list): (type_error 
                   | InitAssign (pos, ci, et) -> (match (t_eval_complex_id env ci, t_eval_expr_type env et) with
                                                 | ((Ok t1, _), (Ok t2, _)) when t1 = t2 -> (CheckOk, env)
                                                 | ((Ok t1, _), (Ok t2, _)) -> (CheckError (AssignType (pos, t1, t2)), env)
-                                                | ((Error e, _), _ ) -> (CheckError e, env)
-                                                | (_ , (Error e, _)) -> (CheckError e, env))
+                                                | ((Error e, _), _ ) -> (CheckError e, [])
+                                                | (_ , (Error e, _)) -> (CheckError e, []))
                   | NextAssign (pos, ci, et) -> (match (t_eval_complex_id env ci, t_eval_expr_type env et) with
                                                 | ((Ok t1, _), (Ok t2, _)) when t1 = t2 -> (CheckOk, env)
                                                 | ((Ok t1, _), (Ok t2, _)) -> (CheckError (AssignType (pos, t1, t2)), env)
-                                                | ((Error e, _), _ ) -> (CheckError e, env)
-                                                | (_ , (Error e, _)) -> (CheckError e, env))
+                                                | ((Error e, _), _ ) -> (CheckError e, [])
+                                                | (_ , (Error e, _)) -> (CheckError e, []))
                   | Assign (pos, ci, et) -> (match (t_eval_complex_id env ci, t_eval_expr_type env et) with
                                                 | ((Ok t1, _), (Ok t2, _)) when t1 = t2 -> (CheckOk, env)
-                                                | ((Ok t1, _), (Ok t2, _)) -> (CheckError (AssignType (pos, t1, t2)), env)
-                                                | ((Error e, _), _ ) -> (CheckError e, env)
-                                                | (_ , (Error e, _)) -> (CheckError e, env))
+                                                | ((Ok t1, _), (Ok t2, _)) -> (CheckError (AssignType (pos, t1, t2)), [])
+                                                | ((Error e, _), _ ) -> (CheckError e, [])
+                                                | (_ , (Error e, _)) -> (CheckError e, []))
 
 let t_eval_module_element (env : env) (me : A.module_element): (type_error check_result * env) = 
     match me with
@@ -564,17 +582,17 @@ let t_eval_module_element (env : env) (me : A.module_element): (type_error check
     | A.AssignConst (_, acl) -> t_eval_assign_const env acl
     | A.TransConst (_, expr_type) -> (match t_eval_expr_type env expr_type with
                                      | (Ok _, env') -> (CheckOk, env')
-                                     | (Error e, env') -> (CheckError e, env'))
+                                     | (Error e, _) -> (CheckError e, []))
     | A.LtlSpec (_, expr_type) -> (match t_eval_expr_type env expr_type with
                                      | (Ok _, env') -> (CheckOk, env')
-                                     | (Error e, env') -> (CheckError e, env'))
+                                     | (Error e, _) -> (CheckError e, []))
 
 let rec type_eval_module_element_list (env: env) (mel: A.module_element list) : (type_error check_result * env) = 
     match mel with
     | [] -> (CheckOk, env)
     | me :: t -> match t_eval_module_element env me with
                  | (CheckOk, env') -> type_eval_module_element_list env' t
-                 | (error, env') -> (error, env')
+                 | (error, _) -> (error, env)
 
 let rec type_eval_rec (env : env) (ml:A.nuxmv_module list) : (type_error check_result * env) = 
     match ml with
