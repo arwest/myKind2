@@ -18,9 +18,10 @@
 
 let read_input_from_file filename =
   match NuxmvInput.from_file filename with
-  | Ok res -> (match res with
+  (* | Ok res -> (match res with
               | [] -> Format.printf "AST is empty@."
-              | NuxmvAst.CustomModule _ :: t -> Format.printf "AST is not empty@.")
+              | NuxmvAst.CustomModule _ :: t -> Format.printf "AST is not empty@.") *)
+  | Ok res -> Format.printf res
 
   | Error (NuxmvInput.UnexpectedChar (pos, c)) ->
       Format.eprintf "%a: error: unexpected character ‘%c’@."
@@ -44,7 +45,23 @@ let read_input_from_file filename =
   | Error (NuxmvInput.RangeLowerValueError pos) ->
       Format.eprintf "%a: Lower bound of range must be less than or equal to upper bound@." 
         Position.pp_print_position pos
+
+  | Error (NuxmvInput.ExpectedTypeError pos) ->
+      Format.eprintf "%a: Given type not in the list of allowed types for operation@." 
+        Position.pp_print_position pos
+
+  | Error (NuxmvInput.NonMatchingTypeError pos) ->
+      Format.eprintf "%a: Two types of operation are not equal@." 
+        Position.pp_print_position pos
+
+  | Error (NuxmvInput.MissingVariableError pos) ->
+      Format.eprintf "%a: Missing variable in environment when called@." 
+        Position.pp_print_position pos
   
+  | Error (NuxmvInput.AssignTypeError pos) ->
+      Format.eprintf "%a: Type of variable being assigned and the value being assigned to do not match@." 
+        Position.pp_print_position pos
+
   | exception (Sys_error msg) ->
       Format.eprintf "%s@." msg
 
