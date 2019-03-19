@@ -83,9 +83,9 @@ type nuxmv_expr =
 (* Complex Identifiers *)
 and comp_ident = 
     | CIdent of Position.t * ident
-    | PerIdent of Position.t * comp_ident * ident
-    | BrackIdent of Position.t * comp_ident * expr_type
-    | Self of Position.t
+    (* | PerIdent of Position.t * comp_ident * ident
+    | BrackIdent of Position.t * comp_ident * expr_type (* These are more advanced than the exampls I have, so I will skip for now *)
+    | Self of Position.t *)
     
 and expr_type = 
     | LtlExpr of Position.t * nuxmv_expr

@@ -39,10 +39,10 @@ exception Ltl_Use_Error
 %token AND NOT OR XOR XNOR
 %token PLUS MINUS MOD MUL DIV
 %token NEXT INIT CASE ESAC
-%token SELF
+(* %token SELF *)
 %token ASSIGNMENT
 %token LPAREN RPAREN LCURLBRACK RCURLBRACK LSQBRACK RSQBRACK
-%token COMMA SEMICOLON COLON PERIOD DPERIOD
+%token COMMA SEMICOLON COLON (*PERIOD*) DPERIOD
 %token EOF
 
 (* Priorities and associativity of operators, lowest first *)
@@ -133,9 +133,9 @@ assign_element:
 
 complex_indentifier:
     | i = ID { A.CIdent (mk_pos $startpos, i) }
-    | ci = complex_indentifier PERIOD i = ID { A.PerIdent (mk_pos $startpos, ci, i) }
+(*   | ci = complex_indentifier PERIOD i = ID { A.PerIdent (mk_pos $startpos, ci, i) }
     | ci = complex_indentifier LSQBRACK e = simple_expr RSQBRACK { BrackIdent (mk_pos $startpos, ci, e) }
-    | SELF { A.Self (mk_pos $startpos) }
+    | SELF { A.Self (mk_pos $startpos) } *)
     ;
 
 (* Trans Constraints *)

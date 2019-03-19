@@ -62,9 +62,9 @@ type nuxmv_expr =
 
 and comp_ident = 
     | CIdent of Position.t * ident
-    | PerIdent of Position.t * comp_ident * ident
+    (* | PerIdent of Position.t * comp_ident * ident
     | BrackIdent of Position.t * comp_ident * expr_type
-    | Self of Position.t
+    | Self of Position.t *)
     
 and expr_type = 
     | LtlExpr of Position.t * nuxmv_expr
