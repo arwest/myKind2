@@ -61,6 +61,10 @@ let read_input_from_file filename =
   | Error (NuxmvInput.AssignTypeError pos) ->
       Format.eprintf "%a: Type of variable being assigned and the value being assigned to do not match@." 
         Position.pp_print_position pos
+  
+  | Error (NuxmvInput.SymbolicExistenceError pos) ->
+      Format.eprintf "%a: Variable with same identifier already exists with a non Symbolic Constant type@." 
+        Position.pp_print_position pos  
 
   | exception (Sys_error msg) ->
       Format.eprintf "%s@." msg

@@ -29,6 +29,7 @@ type parse_error =
   | NonMatchingTypeError of Position.t (* *nuxmv_ast_type * nuxmv_ast_type *)
   | MissingVariableError of Position.t (* *string *)
   | AssignTypeError of Position.t (* *nuxmv_ast_type * nuxmv_ast_type *)
+  | SymbolicExistenceError of Position.t (* *string *)
 
 let parse_buffer lexbuf : (output, parse_error) result =
   try
@@ -44,6 +45,7 @@ let parse_buffer lexbuf : (output, parse_error) result =
                                   | NuxmvChecker.CheckError (NonMatching (pos, _, _) ) -> Error (NonMatchingTypeError pos)
                                   | NuxmvChecker.CheckError (MissingVariable (pos, _) ) -> Error (MissingVariableError pos)
                                   | NuxmvChecker.CheckError (AssignType (pos, _, _) ) -> Error (AssignTypeError pos)
+                                  | NuxmvChecker.CheckError (SymbolicType (pos, _) ) -> Error (SymbolicExistenceError pos)
                                   | NuxmvChecker.CheckOk -> Ok ("Type Check Successful @.") )
         (* Ok (abstract_syntax) *)
   with 

@@ -29,6 +29,7 @@ type parse_error =
   | NonMatchingTypeError of Position.t (* *nuxmv_ast_type * nuxmv_ast_type *)
   | MissingVariableError of Position.t (* *string *)
   | AssignTypeError of Position.t (* *nuxmv_ast_type * nuxmv_ast_type *)
+  | SymbolicExistenceError of Position.t (* *string *)
 
 val from_channel: in_channel -> (output, parse_error) result
 

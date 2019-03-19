@@ -24,6 +24,7 @@ type semantic_error_type =
 
 type nuxmv_ast_type = 
     | IntT
+    | SymbolicT
     | FloatT
     | RangeT
     | EnumT of nuxmv_ast_type list
@@ -39,6 +40,7 @@ type type_error =
     | NonMatching of Position.t * nuxmv_ast_type * nuxmv_ast_type
     | MissingVariable of Position.t * string
     | AssignType of Position.t * nuxmv_ast_type * nuxmv_ast_type
+    | SymbolicType of Position.t * string
 
 type 'a check_result = 
     | CheckOk
