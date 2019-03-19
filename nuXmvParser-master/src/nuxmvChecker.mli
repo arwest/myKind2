@@ -17,13 +17,33 @@
 (** @author Andrew West *)
 
 type semantic_error_type = 
-    | LtlUse
-    | NextExpr
-    | DoubleNextExpr
-    | RangeLowerValue
+    | LtlUse of Position.t
+    | NextExpr of Position.t
+    | DoubleNextExpr of Position.t
+    | RangeLowerValue of Position.t
+
+type nuxmv_ast_type = 
+    | IntT
+    | FloatT
+    | RangeT
+    | EnumT of nuxmv_ast_type list
+    | ArrayT of nuxmv_ast_type list
+    | BoolT
+    | SetT of nuxmv_ast_type list
+    | CaseT of nuxmv_ast_type list
+    (* | FunT of nuxmv_ast_type list * nuxmv_ast_type *)
+    (* | ModuleT of (string * nuxmv_ast_type) list *)
+
+type type_error =
+    | Expected of Position.t * nuxmv_ast_type list * nuxmv_ast_type
+    | NonMatching of Position.t * nuxmv_ast_type * nuxmv_ast_type
+    | MissingVariable of Position.t * string
+    | AssignType of Position.t * nuxmv_ast_type * nuxmv_ast_type
 
 type 'a check_result = 
     | CheckOk
-    | CheckError of Position.t * 'a
+    | CheckError of 'a
 
 val semantic_eval: NuxmvAst.t ->  semantic_error_type check_result
+
+val type_eval : NuxmvAst.t -> type_error check_result
