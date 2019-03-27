@@ -743,11 +743,11 @@ let rec t_eval_define_decl (env : env) (del: A.define_element list):  (env, type
         match svd with
         | SimpleDef (pos, id, et) -> (
             match t_eval_expr_type env et with
-            | Ok t-> t_eval_define_decl env tail
+            | Ok t-> let env' = (id, t) :: env in t_eval_define_decl env' tail
             | Error e -> Error e)
         | ArrayDef (pos, id, et) -> (
             match t_eval_expr_type env et with
-            | Ok t-> t_eval_define_decl env tail
+            | Ok t-> let env' = (id, t) :: env in t_eval_define_decl env' tail
             | Error e -> Error e)
 
 let rec t_eval_assign_const (env : env) (acl: A.assign_const list): (env, type_error) result =
