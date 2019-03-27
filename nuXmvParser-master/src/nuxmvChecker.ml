@@ -300,26 +300,32 @@ let enum_contains_value (enum_type_list: (string * nuxmv_ast_type) list ) (id : 
     | true -> Ok true
     | false -> Error (EnumNotContain (pos, id))
 
-let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_error) result = 
+let rec t_eval_expr (in_enum : bool) (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_error) result = 
     match expr with
     | True _ -> Ok BoolT
     | False _ -> Ok BoolT
-    | CInt _ -> Ok IntT
+    | CInt (pos, i) -> if in_enum then t_eval_expr in_enum env (Ident (pos, string_of_int i)) else Ok IntT
     | CFloat _ -> Ok FloatT
     | Ident (p, id) -> (
-        let res = List.find_opt (fun x -> match x with | (s,t) when s = id -> true | _ -> false) env in 
-        match res with
-        | Some (s,t) -> Ok t 
-        | None -> Error (MissingVariable (p, id)))
+        if in_enum 
+        then
+            match enum_contains_value env id p with
+            | Ok _ -> Ok BoolT
+            | Error e -> Error e
+        else
+            let res = List.find_opt (fun x -> match x with | (s,t) when s = id -> true | _ -> false) env in 
+            match res with
+            | Some (s,t) -> Ok t 
+            | None -> Error (MissingVariable (p, id)))
     | CRange (p, i1, i2) -> Ok RangeT
     | Call (p, ci, nel) -> Ok BoolT (* TODO: figure out how to deal with the call *)
     | Not (p, e) ->( 
-        match t_eval_expr env e with
+        match t_eval_expr in_enum env e with
         | Ok t when t = BoolT -> Ok BoolT
         | Ok t -> Error (Expected (p, [BoolT], t))
         | e -> e)
     | A.And (p, e1, e2) -> (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | BoolT -> Ok BoolT
@@ -328,7 +334,7 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e) 
     | A.Or (p, e1, e2) ->  (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | BoolT -> Ok BoolT
@@ -337,7 +343,7 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e) 
     | A.Xor (p, e1, e2) -> (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | BoolT -> Ok BoolT
@@ -346,7 +352,7 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e) 
     | A.Xnor (p, e1, e2) -> (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | BoolT -> Ok BoolT
@@ -355,7 +361,7 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e) 
     | A.Impl (p, e1, e2) -> (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | BoolT -> Ok BoolT
@@ -364,7 +370,7 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e)
     | A.Equiv (p, e1, e2) -> (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | BoolT -> Ok BoolT
@@ -373,31 +379,9 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e)
     | A.Eq (p, e1, e2) -> (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
-        | (Ok (EnumT enum_list), _ ) -> (
-            match (e2, t_eval_expr enum_list e2) with
-            | (A.Ident (pos, id), _) -> (
-                match enum_contains_value enum_list id pos with 
-                | Ok _ -> Ok BoolT
-                | Error e -> Error e)
-            | (A.CInt (pos, i), _) -> (
-                match enum_contains_value enum_list (string_of_int i) pos with 
-                | Ok _ -> Ok BoolT
-                | Error e -> Error e)
-            | (_, Ok t) -> Error (NonMatching (p, EnumT [], t))
-            | (_, Error e) -> Error e)
-        | ( _ , Ok (EnumT enum_list) ) -> (
-            match (e1, t_eval_expr enum_list e1) with
-            | (A.Ident (pos, id), _) -> (
-                match enum_contains_value enum_list id pos with 
-                | Ok _ -> Ok BoolT
-                | Error e -> Error e)
-            | (A.CInt (pos, i), _) -> (
-                match enum_contains_value enum_list (string_of_int i) pos with 
-                | Ok _ -> Ok BoolT
-                | Error e -> Error e)
-            | (_, Ok t) -> Error (NonMatching (p, EnumT [], t))
-            | (_, Error e) -> Error e)
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
+        | (Ok (EnumT enum_list), _ ) -> t_eval_expr true enum_list e2 
+        | ( _ , Ok (EnumT enum_list) ) -> t_eval_expr true enum_list e1
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | IntT -> Ok BoolT
@@ -407,31 +391,9 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e)
     | A.NotEq (p, e1, e2) -> (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
-        | (Ok (EnumT enum_list), _ ) -> (
-            match (e2, t_eval_expr enum_list e2) with
-            | (A.Ident (pos, id), _) -> (
-                match enum_contains_value enum_list id pos with 
-                | Ok _ -> Ok BoolT
-                | Error e -> Error e)
-            | (A.CInt (pos, i), _) -> (
-                match enum_contains_value enum_list (string_of_int i) pos with 
-                | Ok _ -> Ok BoolT
-                | Error e -> Error e)
-            | (_, Ok t) -> Error (NonMatching (p, EnumT [], t))
-            | (_, Error e) -> Error e)
-        | ( _ , Ok (EnumT enum_list) ) -> (
-            match (e1, t_eval_expr enum_list e1) with
-            | (A.Ident (pos, id), _) -> (
-                match enum_contains_value enum_list id pos with 
-                | Ok _ -> Ok BoolT
-                | Error e -> Error e)
-            | (A.CInt (pos, i), _) -> (
-                match enum_contains_value enum_list (string_of_int i) pos with 
-                | Ok _ -> Ok BoolT
-                | Error e -> Error e)
-            | (_, Ok t) -> Error (NonMatching (p, EnumT [], t))
-            | (_, Error e) -> Error e)
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
+        | (Ok (EnumT enum_list), _ ) -> t_eval_expr true enum_list e2 
+        | ( _ , Ok (EnumT enum_list) ) -> t_eval_expr true enum_list e1
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | IntT -> Ok BoolT
@@ -441,7 +403,7 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e)
     | A.Lt (p, e1, e2) ->  ( 
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | IntT -> Ok BoolT
@@ -450,7 +412,7 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e)
     | A.Lte (p, e1, e2) -> ( 
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | IntT -> Ok BoolT
@@ -459,7 +421,7 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e)
     | A.Gt (p, e1, e2) ->  ( 
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | IntT -> Ok BoolT
@@ -468,7 +430,7 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e)
     | A.Gte (p, e1, e2) -> ( 
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | IntT -> Ok BoolT
@@ -477,7 +439,7 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e)
     | A.Plus (p, e1, e2) -> (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | IntT -> Ok IntT
@@ -487,12 +449,12 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e)
     | A.Uminus (p, e) -> (
-        match t_eval_expr env e with
+        match t_eval_expr in_enum env e with
         | Ok t when t = IntT -> Ok IntT
         | Ok t -> Error (Expected (p, [IntT], t))
         | err -> err)
     | A.Minus (p, e1, e2) -> (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | IntT -> Ok IntT
@@ -502,7 +464,7 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e)
     | A.Multiply (p, e1, e2) -> (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | IntT -> Ok IntT
@@ -512,7 +474,7 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e)
     | A.Divide (p, e1, e2) -> (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | IntT -> Ok IntT
@@ -522,7 +484,7 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e)
     | A.Mod (p, e1, e2) -> (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | IntT -> Ok IntT
@@ -531,19 +493,19 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e)
     | A.SetExp (p, el) ->  (
-        let mapped = List.map (t_eval_expr env) el in
+        let mapped = List.map (t_eval_expr in_enum env) el in
         let result = List.find_opt (fun x -> match x with | Ok _ -> false | _ -> true) mapped in
         match result with
         | Some e -> e
         | None -> Ok (SetT (List.map (fun x -> match x with Ok t -> t | _ -> assert false) mapped)))
     | A.CaseExp (p, el) -> (
-        let mapped1 = List.map (t_eval_expr env) (List.map fst el) in
+        let mapped1 = List.map (t_eval_expr in_enum env) (List.map fst el) in
         let result1 = 
             List.find_opt (fun x -> match x with | Ok BoolT -> false | _ -> true) mapped1 in
         match result1 with
         | Some res -> res
         | None -> 
-            let mapped2 = List.map (t_eval_expr env) (List.map snd el) in
+            let mapped2 = List.map (t_eval_expr in_enum env) (List.map snd el) in
             let result2 = 
             List.find_opt (fun x -> match x with | Ok _ -> false | _ -> true) mapped2 in
             let result3 = 
@@ -556,26 +518,26 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
                             mapped2))
             | (_, _ ) -> Ok (CaseT (List.map (fun x -> match x with Ok t -> t | _ -> assert false) mapped2 )))
     | A.NextExp (p, e) -> (
-        match t_eval_expr env e with
+        match t_eval_expr in_enum env e with
         | Ok t -> Ok t
         | e -> e)
     | A.NextState (p, e) ->  (
-        match t_eval_expr env e with
+        match t_eval_expr in_enum env e with
         | Ok BoolT -> Ok BoolT
         | Ok t -> Error (Expected (p, [BoolT], t))
         | e -> e)
     | A.Globally (p, e) ->  (
-        match t_eval_expr env e with
+        match t_eval_expr in_enum env e with
         | Ok BoolT -> Ok BoolT
         | Ok t -> Error (Expected (p, [BoolT], t))
         | e -> e)
     | A.Finally (p, e) -> (
-        match t_eval_expr env e with
+        match t_eval_expr in_enum env e with
         | Ok BoolT -> Ok BoolT
         | Ok t -> Error (Expected (p, [BoolT], t))
         | e -> e)
     | A.Until (p, e1, e2) -> (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | BoolT -> Ok BoolT
@@ -584,7 +546,7 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e)
     | A.Releases (p, e1, e2) -> (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | BoolT -> Ok BoolT
@@ -593,27 +555,27 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e)
     | A.PrevState (p, e) ->  (
-        match t_eval_expr env e with
+        match t_eval_expr in_enum env e with
         | Ok BoolT -> Ok BoolT
         | Ok t -> Error (Expected (p, [BoolT], t))
         | e -> e)
     | A.NotPrevStateNot (p, e) ->  (
-        match t_eval_expr env e with
+        match t_eval_expr in_enum env e with
         | Ok BoolT -> Ok BoolT
         | Ok t -> Error (Expected (p, [BoolT], t))
         | e -> e)
     | A.Historically (p, e) ->  (
-        match t_eval_expr env e with
+        match t_eval_expr in_enum env e with
         | Ok BoolT -> Ok BoolT
         | Ok t -> Error (Expected (p, [BoolT], t))
         | e -> e)
     | A.Once (p, e) -> (
-        match t_eval_expr env e with
+        match t_eval_expr in_enum env e with
         | Ok BoolT -> Ok BoolT
         | Ok t -> Error (Expected (p, [BoolT], t))
         | e -> e)
     | A.Since (p, e1, e2) ->  (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | BoolT -> Ok BoolT
@@ -622,7 +584,7 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
         | (Error e , _ ) -> Error e
         | ( _ , Error e) -> Error e)
     | A.Triggered (p, e1, e2) -> (
-        match (t_eval_expr env e1, t_eval_expr env e2) with
+        match (t_eval_expr in_enum env e1, t_eval_expr in_enum env e2) with
         | (Ok t1, Ok t2) when t1 = t2 -> (
             match t1 with
             | BoolT -> Ok BoolT
@@ -634,16 +596,16 @@ let rec t_eval_expr (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_er
 let rec t_eval_expr_type (env : env) (expr_type: A.expr_type) : (nuxmv_ast_type, type_error) result  = 
     match expr_type with
     | A.LtlExpr (p, expr) -> (
-        match t_eval_expr env expr with
+        match t_eval_expr false env expr with
         | Ok BoolT -> Ok BoolT
         | Ok t -> Error (Expected (p, [BoolT], t))
         | e -> e)
     | A.NextExpr (_, expr) -> (
-        match t_eval_expr env expr with
+        match t_eval_expr false env expr with
         | Ok t -> Ok t
         | e -> e)
     | A.SimpleExpr (_, expr) ->(
-        match t_eval_expr env expr with
+        match t_eval_expr false env expr with
         | Ok t -> Ok t
         | e -> e)
     | A.ArrayExpr (_, etl) -> (
