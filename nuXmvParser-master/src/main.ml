@@ -21,7 +21,7 @@ let read_input_from_file filename =
   (* | Ok res -> (match res with
               | [] -> Format.printf "AST is empty@."
               | NuxmvAst.CustomModule _ :: t -> Format.printf "AST is not empty@.") *)
-  | Ok res -> Format.printf res
+  | Ok res -> Format.printf "%s @." res
 
   | Error (NuxmvInput.UnexpectedChar (pos, c)) ->
       Format.eprintf "%a: error: unexpected character ‘%c’@."
@@ -62,9 +62,13 @@ let read_input_from_file filename =
       Format.eprintf "%a: Type of variable being assigned and the value being assigned to do not match@." 
         Position.pp_print_position pos
   
-  | Error (NuxmvInput.SymbolicExistenceError pos) ->
-      Format.eprintf "%a: Variable with same identifier already exists with a non Symbolic Constant type@." 
+  | Error (NuxmvInput.EnumValueExistenceError pos) ->
+      Format.eprintf "%a: Enum value already exists in enum namespace @." 
         Position.pp_print_position pos  
+  
+  | Error (NuxmvInput.EnumNotContainValue pos) ->
+      Format.eprintf "%a: Enum does not contain value of given id @." 
+        Position.pp_print_position pos   
 
   | exception (Sys_error msg) ->
       Format.eprintf "%s@." msg

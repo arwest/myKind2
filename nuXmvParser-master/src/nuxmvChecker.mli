@@ -27,7 +27,7 @@ type nuxmv_ast_type =
     | SymbolicT
     | FloatT
     | RangeT
-    | EnumT of nuxmv_ast_type list
+    | EnumT of (string * nuxmv_ast_type) list
     | ArrayT of nuxmv_ast_type list
     | BoolT
     | SetT of nuxmv_ast_type list
@@ -40,7 +40,8 @@ type type_error =
     | NonMatching of Position.t * nuxmv_ast_type * nuxmv_ast_type
     | MissingVariable of Position.t * string
     | AssignType of Position.t * nuxmv_ast_type * nuxmv_ast_type
-    | SymbolicType of Position.t * string
+    | EnumValueExist of Position.t * string
+    | EnumNotContain of Position.t * string
 
 type 'a check_result = 
     | CheckOk
