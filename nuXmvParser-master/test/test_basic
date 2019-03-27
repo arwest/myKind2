@@ -8,33 +8,15 @@ VAR
 -- OTHER ENVIRONMENTAL VARIABLES --
 P_0 : boolean ;
 P_1 : boolean ;
-P_10 : boolean ;
-P_11 : boolean ;
-P_12 : boolean ;
-P_13 : boolean ;
-P_14 : boolean ;
-P_15 : boolean ;
-P_16 : boolean ;
-P_17 : boolean ;
-P_18 : boolean ;
-P_2 : boolean ;
-P_3 : boolean ;
-P_4 : boolean ;
-P_5 : boolean ;
-P_6 : boolean ;
-P_7 : boolean ;
-P_8 : boolean ;
-P_9 : boolean ;
 
 ue_state	:
 {
 	ue_1,
-    unknown_id,
-    P_0
+    unknown_id
 };
-
 
 DEFINE
 
-ue_T1   :=	 (P_0)	;
-ue_T2	:=	 (ue_state = ue_1)	;
+ue_T1   :=	 (P_1)	;
+ue_T2   :=	 (P_0)	;
+ue_T3	:=	 (ue_state = ue_1)	;
