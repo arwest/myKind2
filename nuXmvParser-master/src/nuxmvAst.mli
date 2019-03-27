@@ -111,3 +111,5 @@ type nuxmv_module =
 
 type t = nuxmv_module list
 
+val print_program : t -> string
+
