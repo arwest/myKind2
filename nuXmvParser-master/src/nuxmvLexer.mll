@@ -68,6 +68,7 @@ rule token = parse
   | "TRUE"             { P.TRUE }
   | "FALSE"            { P.FALSE }
   (*| '.'                { P.PERIOD } *)
+  | '?'                { P.THEN }
   | ".."               { P.DPERIOD }
   | ';'                { P.SEMICOLON }
   | ':'                { P.COLON }

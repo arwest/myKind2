@@ -47,6 +47,7 @@ type nuxmv_expr =
     | Mod of Position.t * nuxmv_expr * nuxmv_expr
     | SetExp of Position.t * nuxmv_expr list
     | CaseExp of Position.t * (nuxmv_expr * nuxmv_expr) list
+    | IfThenElseExp of Position.t * nuxmv_expr * nuxmv_expr * nuxmv_expr
     | NextExp of Position.t * nuxmv_expr
     | NextState of Position.t * nuxmv_expr
     | Globally of Position.t * nuxmv_expr

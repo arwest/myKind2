@@ -34,7 +34,7 @@ exception Ltl_Use_Error
 %token FRACTIONAL
 %token BOOL INT REAL
 %token TRUE FALSE
-%token EQ NEQ LT GT LTE GTE
+%token EQ NEQ LT GT LTE GTE THEN
 %token RARROW DARROW
 %token AND NOT OR XOR XNOR
 %token PLUS MINUS MOD MUL DIV
@@ -48,6 +48,7 @@ exception Ltl_Use_Error
 (* Priorities and associativity of operators, lowest first *)
 %right RARROW
 %left  DARROW
+%left  THEN COLON
 %left  OR XOR XNOR
 %left  AND
 %left  EQ NEQ LT GT LTE GTE
@@ -185,6 +186,7 @@ expr:
     | LPAREN e = expr RPAREN { e }
     | LCURLBRACK el = separated_nonempty_list(COMMA, expr) RCURLBRACK { A.SetExp (mk_pos $startpos, el) }
     | CASE cel = nonempty_list(case_element) ESAC { A.CaseExp (mk_pos $startpos, cel) }
+    | e1 = expr THEN e2 = expr COLON e3 = expr { A.IfThenElseExp (mk_pos $startpos, e1, e2, e3) }
     | NEXT LPAREN e = expr RPAREN { A.NextExp (mk_pos $startpos, e)}
     
     (* Ltl Expressions*)

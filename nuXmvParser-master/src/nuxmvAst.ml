@@ -63,6 +63,9 @@ type nuxmv_expr =
     (* Case Expression*)
     | CaseExp of Position.t * (nuxmv_expr * nuxmv_expr) list
 
+    (* If-Then-Else Expression *)
+    | IfThenElseExp of Position.t * nuxmv_expr * nuxmv_expr * nuxmv_expr
+
     (* Next Expression*)
     | NextExp of Position.t * nuxmv_expr
     (* Ltl Operations *)
