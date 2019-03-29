@@ -31,7 +31,6 @@ type nuxmv_ast_type =
     | ArrayT of nuxmv_ast_type list
     | BoolT
     | SetT of nuxmv_ast_type list
-    | CaseT of nuxmv_ast_type list
     (* | FunT of nuxmv_ast_type list * nuxmv_ast_type *)
     (* | ModuleT of (string * nuxmv_ast_type) list *)
 
