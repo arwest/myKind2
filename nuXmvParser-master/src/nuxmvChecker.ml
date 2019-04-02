@@ -670,7 +670,7 @@ let rec t_eval_state_var_decl (env : env) (svdl: A.state_var_decl list) : (env, 
     match svdl with
     | [] -> Ok env 
     | svd :: t  -> 
-        (match svd with (* TODO: Move all identations over for better readabiity and lessen it *)
+        (match svd with 
         | A.ModuleType (p, i, mts) -> 
             (match mts with 
                 | A.ModuleTypeSpecifier (pos, id, etl) -> 
@@ -712,6 +712,7 @@ let rec t_eval_define_decl (env : env) (del: A.define_element list):  (env, type
     | [] -> Ok env
     | svd :: tail -> 
         match svd with
+        (* TODO: rework this so that we can have vairable definiton in any order *)
         | A.SimpleDef (pos, id, et) -> (
             match t_eval_expr_type (false, []) env et with
             | Ok t-> let env' = (id, t) :: env in t_eval_define_decl env' tail

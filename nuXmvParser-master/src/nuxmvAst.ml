@@ -326,6 +326,7 @@ let s_eval_module_element (me : A.module_element): semantic_error_type check_res
     | A.AssignConst (_, acl) -> s_eval_assign_const acl
     | A.TransConst (_, expr_type) -> s_eval_expr_type expr_type
     | A.LtlSpec (_, expr_type) -> s_eval_expr_type expr_type*)
+    
 let print_enum_type_value (s: string) (etv: enum_type_value) : string =
     match etv with
     | ETId (_, id) -> s ^ id ^ "," 
