@@ -28,7 +28,6 @@ type nuxmv_ast_type =
     | IntT
     | SymbolicT
     | FloatT
-    | RangeT
     | EnumT of (string * nuxmv_ast_type) list
     | ArrayT of nuxmv_ast_type list
     | BoolT
@@ -40,7 +39,7 @@ type type_error =
     | Expected of Position.t * nuxmv_ast_type list * nuxmv_ast_type
     | NonMatching of Position.t * nuxmv_ast_type * nuxmv_ast_type
     | MissingVariable of Position.t * string
-    | AssignType of Position.t * nuxmv_ast_type * nuxmv_ast_type
+    | VariableAlreadyDefined of Position.t * string
     | EnumValueExist of Position.t * string
     | EnumNotContain of Position.t * string
 
@@ -49,6 +48,9 @@ type env = (string * nuxmv_ast_type) list
 type 'a check_result = 
     | CheckOk
     | CheckError of 'a
+
+let lookup_opt (id : string) (lst : (string * 'a) list ) : (string * 'a) option = 
+    List.find_opt (fun x -> match x with | (s,t) when s = id -> true | _ -> false) lst
 
 (* SEMANTIC CHECKER *)
 
@@ -320,11 +322,11 @@ let rec t_eval_expr (in_enum : (bool * env)) (env : env) (expr: A.nuxmv_expr)  :
             | Ok _ -> Ok BoolT
             | Error e -> Error e
         else
-            let res = List.find_opt (fun x -> match x with | (s,t) when s = id -> true | _ -> false) env in 
+            let res = lookup_opt id env in 
             match res with
             | Some (s,t) -> Ok t 
             | None -> Error (MissingVariable (p, id)))
-    | A.CRange (p, i1, i2) -> Ok RangeT
+    | A.CRange (p, i1, i2) -> Ok IntT (*TODO: ask Daniel if changing Ranges to Ints make sense for type checking purposes *)
     | A.Call (p, ci, nel) -> Ok BoolT (* TODO: figure out how to deal with the call *)
     | A.Not (p, e) ->( 
         match t_eval_expr in_enum env e with
@@ -683,15 +685,26 @@ let rec t_eval_state_var_decl (env : env) (svdl: A.state_var_decl list) : (env, 
         | A.SimpleType (p, i, sts) -> 
             (match sts with
                 (* TODO: Check that the identifier isn't being used already *)
-                | A.Bool _ -> 
-                    let env' = (i, BoolT) :: env in t_eval_state_var_decl env' t
-                | A.Int _ -> 
-                    let env' = (i, IntT) :: env in t_eval_state_var_decl env' t
-                | A.Real _ -> 
-                    let env' = (i, FloatT) :: env in t_eval_state_var_decl env' t
-                | A.IntRange _ -> 
-                    let env' = (i, RangeT) :: env in t_eval_state_var_decl env' t
-                (* Figure out what the problem with checking the id's in the declaration and calling the top level id ... *)
+                | A.Bool _ -> (
+                    match lookup_opt i env with
+                    | Some _ -> Error (VariableAlreadyDefined (p, i))
+                    | None -> let env' = (i, BoolT) :: env in t_eval_state_var_decl env' t
+                )   
+                | A.Int _ -> (
+                    match lookup_opt i env with
+                    | Some _ -> Error (VariableAlreadyDefined (p, i))
+                    | None -> let env' = (i, IntT) :: env in t_eval_state_var_decl env' t
+                ) 
+                | A.Real _ -> (
+                    match lookup_opt i env with
+                    | Some _ -> Error (VariableAlreadyDefined (p, i))
+                    | None -> let env' = (i, FloatT) :: env in t_eval_state_var_decl env' t
+                ) 
+                | A.IntRange _ -> (
+                    match lookup_opt i env with
+                    | Some _ -> Error (VariableAlreadyDefined (p, i))
+                    | None -> let env' = (i, IntT) :: env in t_eval_state_var_decl env' t
+                ) 
                 | A.EnumType (p, etvl) -> ( 
                     let enumLst = t_eval_enum_var_decl etvl in
                     match enumLst with
@@ -700,27 +713,45 @@ let rec t_eval_state_var_decl (env : env) (svdl: A.state_var_decl list) : (env, 
             )
         )
 
-let rec get_expr_from_expr_type (et: A.expr_type) : A.nuxmv_expr =
-    match et with
-    | A.LtlExpr (p, expr) -> expr
-    | A.NextExpr (_, expr) -> expr
-    | A.SimpleExpr (_, expr) -> expr
-    | A.ArrayExpr (_, etl) -> get_expr_from_expr_type (List.hd etl)
-
-let rec t_eval_define_decl (env : env) (del: A.define_element list):  (env, type_error) result =
+let rec create_define_process_env (del: A.define_element list): (string * A.expr_type) list = 
     match del with
-    | [] -> Ok env
-    | svd :: tail -> 
+    | [] -> []
+    | svd :: tail ->
         match svd with
-        (* TODO: rework this so that we can have vairable definiton in any order *)
-        | A.SimpleDef (pos, id, et) -> (
-            match t_eval_expr_type (false, []) env et with
-            | Ok t-> let env' = (id, t) :: env in t_eval_define_decl env' tail
-            | Error e -> Error e)
-        | A.ArrayDef (pos, id, et) -> (
-            match t_eval_expr_type (false, []) env et with
-            | Ok t-> let env' = (id, t) :: env in t_eval_define_decl env' tail
-            | Error e -> Error e)
+        | A.SimpleDef (pos, id, et) -> (id, et ) :: (create_define_process_env tail)
+        | A.ArrayDef (pos, id, et) -> (id, et ) :: (create_define_process_env tail)
+
+let rec t_process_define_variables (env : env) (unprocessed_env: (string * A.expr_type) list) : (env, type_error) result =
+    match unprocessed_env with
+    | [] -> Ok env
+    | (id, exp_type ) :: tail -> (
+        match lookup_opt id env with
+        | None -> (
+            match t_eval_expr_type (false, []) env exp_type with
+            | Ok  t -> (
+                let newEnv = (id, t) :: env in
+                t_process_define_variables newEnv tail
+            )
+            | Error (MissingVariable (p, mvid)) -> (
+                let contains = lookup_opt mvid tail in
+                match contains with
+                | Some (mvid, exp_type') -> (
+                    let filtered_tail = List.filter (fun x -> match x with | (s,t) when s = mvid -> false | _ -> true) tail in
+                    let new_unprocessed_order = (mvid, exp_type') :: (id, exp_type) :: filtered_tail in
+                    t_process_define_variables env new_unprocessed_order
+                )
+                | None -> Error (MissingVariable (p, mvid))
+            )
+            | Error e -> Error e
+        )
+        | Some _ -> (
+            match exp_type with
+            | A.LtlExpr (p, _) -> Error (VariableAlreadyDefined (p, id))
+            | A.NextExpr (p, _) -> Error (VariableAlreadyDefined (p, id))
+            | A.SimpleExpr (p, _) ->Error (VariableAlreadyDefined (p, id))
+            | A.ArrayExpr (p, _) -> Error (VariableAlreadyDefined (p, id))
+        )
+    )
 
 let rec t_eval_assign_const (env : env) (acl: A.assign_const list): (env, type_error) result =
     match acl with
@@ -777,7 +808,10 @@ let rec t_eval_assign_const (env : env) (acl: A.assign_const list): (env, type_e
 let t_eval_module_element (env : env) (me : A.module_element): (env, type_error) result = 
     match me with
     | A.StateVarDecl (_, svdl) -> t_eval_state_var_decl env svdl
-    | A.DefineDecl (_, del) -> t_eval_define_decl env del
+    | A.DefineDecl (_, del) -> (
+        let unprocessed_env = create_define_process_env del in 
+        t_process_define_variables env unprocessed_env
+    )
     | A.AssignConst (_, acl) -> t_eval_assign_const env acl
     | A.TransConst (_, expr_type) -> (
         match t_eval_expr_type (false, []) env expr_type with

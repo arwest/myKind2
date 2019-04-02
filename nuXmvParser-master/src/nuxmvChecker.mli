@@ -15,6 +15,7 @@
 *)
 
 (** @author Andrew West *)
+module A = NuxmvAst
 
 type semantic_error_type = 
     | LtlUse of Position.t
@@ -26,7 +27,6 @@ type nuxmv_ast_type =
     | IntT
     | SymbolicT
     | FloatT
-    | RangeT
     | EnumT of (string * nuxmv_ast_type) list
     | ArrayT of nuxmv_ast_type list
     | BoolT
@@ -38,7 +38,7 @@ type type_error =
     | Expected of Position.t * nuxmv_ast_type list * nuxmv_ast_type
     | NonMatching of Position.t * nuxmv_ast_type * nuxmv_ast_type
     | MissingVariable of Position.t * string
-    | AssignType of Position.t * nuxmv_ast_type * nuxmv_ast_type
+    | VariableAlreadyDefined of Position.t * string
     | EnumValueExist of Position.t * string
     | EnumNotContain of Position.t * string
 
