@@ -58,8 +58,8 @@ let read_input_from_file filename =
       Format.eprintf "%a: Missing variable in environment when called@." 
         Position.pp_print_position pos
   
-  | Error (NuxmvInput.AssignTypeError pos) ->
-      Format.eprintf "%a: Type of variable being assigned and the value being assigned to do not match@." 
+  | Error (NuxmvInput.VariableAlreadyDefinedError pos) ->
+      Format.eprintf "%a: Variable name already taken in namespace @." 
         Position.pp_print_position pos
   
   | Error (NuxmvInput.EnumValueExistenceError pos) ->

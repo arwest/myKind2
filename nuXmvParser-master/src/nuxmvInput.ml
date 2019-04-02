@@ -28,7 +28,7 @@ type parse_error =
   | ExpectedTypeError of Position.t (* *nuxmv_ast_type list * nuxmv_ast_type *)
   | NonMatchingTypeError of Position.t (* *nuxmv_ast_type * nuxmv_ast_type *)
   | MissingVariableError of Position.t (* *string *)
-  | AssignTypeError of Position.t (* *nuxmv_ast_type * nuxmv_ast_type *)
+  | VariableAlreadyDefinedError of Position.t (* *nuxmv_ast_type * nuxmv_ast_type *)
   | EnumValueExistenceError of Position.t (* *string *)
   | EnumNotContainValue of Position.t (* * string *)
 
@@ -41,15 +41,17 @@ let parse_buffer lexbuf : (output, parse_error) result =
         | NuxmvChecker.CheckError (DoubleNextExpr pos ) -> Error (DoubleNextExprError pos)
         | NuxmvChecker.CheckError (RangeLowerValue pos ) -> Error (RangeLowerValueError pos)
         (* | NuxmvChecker.CheckOk -> Ok ("Semantic Check Successful") *)
-        | NuxmvChecker.CheckOk -> (let type_res = NuxmvChecker.type_eval abstract_syntax in 
-                                  match type_res with
-                                  | NuxmvChecker.CheckError (Expected (pos, _, _ )) -> Error (ExpectedTypeError pos)
-                                  | NuxmvChecker.CheckError (NonMatching (pos, _, _) ) -> Error (NonMatchingTypeError pos)
-                                  | NuxmvChecker.CheckError (MissingVariable (pos, _) ) -> Error (MissingVariableError pos)
-                                  | NuxmvChecker.CheckError (AssignType (pos, _, _) ) -> Error (AssignTypeError pos)
-                                  | NuxmvChecker.CheckError (EnumValueExist (pos, _) ) -> Error (EnumValueExistenceError pos)
-                                  | NuxmvChecker.CheckError (EnumNotContain (pos, _) ) -> Error (EnumNotContainValue pos)
-                                  | NuxmvChecker.CheckOk -> Ok ("Semantic Check and Type Check Successful") )
+        | NuxmvChecker.CheckOk -> (
+          let type_res = NuxmvChecker.type_eval abstract_syntax in 
+            match type_res with
+            | NuxmvChecker.CheckError (Expected (pos, _, _ )) -> Error (ExpectedTypeError pos)
+            | NuxmvChecker.CheckError (NonMatching (pos, _, _) ) -> Error (NonMatchingTypeError pos)
+            | NuxmvChecker.CheckError (MissingVariable (pos, _) ) -> Error (MissingVariableError pos)
+            | NuxmvChecker.CheckError (VariableAlreadyDefined (pos, _) ) -> Error (VariableAlreadyDefinedError pos)
+            | NuxmvChecker.CheckError (EnumValueExist (pos, _) ) -> Error (EnumValueExistenceError pos)
+            | NuxmvChecker.CheckError (EnumNotContain (pos, _) ) -> Error (EnumNotContainValue pos)
+            | NuxmvChecker.CheckOk -> Ok ("Semantic Check and Type Check Successful") 
+          )
     (* let abs_string = NuxmvAst.print_program abstract_syntax in 
     Ok (abs_string) *)
   with 

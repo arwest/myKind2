@@ -28,7 +28,7 @@ type parse_error =
   | ExpectedTypeError of Position.t (* *nuxmv_ast_type list * nuxmv_ast_type *)
   | NonMatchingTypeError of Position.t (* *nuxmv_ast_type * nuxmv_ast_type *)
   | MissingVariableError of Position.t (* *string *)
-  | AssignTypeError of Position.t (* *nuxmv_ast_type * nuxmv_ast_type *)
+  | VariableAlreadyDefinedError of Position.t (* * string *)
   | EnumValueExistenceError of Position.t (* *string *)
   | EnumNotContainValue of Position.t (* * string *)
 
