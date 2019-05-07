@@ -32,7 +32,9 @@ type nuxmv_ast_type =
     | BoolT
     | SetT of nuxmv_ast_type list
     (* | FunT of nuxmv_ast_type list * nuxmv_ast_type *)
-    (* | ModuleT of (string * nuxmv_ast_type) list *)
+    | ModuleInstance of string * env
+
+and env = (string * nuxmv_ast_type) list
 
 type type_error =
     | Expected of Position.t * nuxmv_ast_type list * nuxmv_ast_type
@@ -41,6 +43,10 @@ type type_error =
     | VariableAlreadyDefined of Position.t * string
     | EnumValueExist of Position.t * string
     | EnumNotContain of Position.t * string
+    | MainError
+    | MissingModule of Position.t * string
+    | ModuleCallTooMany of Position.t * int * int
+    | ModuleCallMissing of Position.t * int * int
 
 type 'a check_result = 
     | CheckOk

@@ -106,7 +106,7 @@ type simple_type_spec =
     | Int of Position.t
     | Real of Position.t
     | IntRange of Position.t * int * int
-    | EnumType of Position.t * (enum_type_value) list (* Assert that it is either an indent or cint*)
+    | EnumType of Position.t * (enum_type_value) list 
 
 type module_type_specifier = 
     | ModuleTypeSpecifier of Position.t * ident * expr_type list
@@ -356,7 +356,7 @@ let print_module_element (s:string) (me : module_element) : string =
 
 let print_nuxmv_module (s: string) (nm : nuxmv_module) : string = 
     match nm with
-    | CustomModule (_, idl, mel) -> List.fold_left print_module_element s mel
+    | CustomModule (id, idl, mel) -> List.fold_left print_module_element s mel
 
 let print_program (program : t) : string = List.fold_left print_nuxmv_module "" program
 
