@@ -43,10 +43,11 @@ type type_error =
     | VariableAlreadyDefined of Position.t * string
     | EnumValueExist of Position.t * string
     | EnumNotContain of Position.t * string
-    | MainError
+    | MainError of Position.t
     | MissingModule of Position.t * string
     | ModuleCallTooMany of Position.t * int * int
     | ModuleCallMissing of Position.t * int * int
+    | AccessOperatorAppliedToNonModule of Position.t * string
 
 type 'a check_result = 
     | CheckOk
@@ -54,4 +55,4 @@ type 'a check_result =
 
 val semantic_eval: NuxmvAst.t ->  semantic_error_type check_result
 
-val type_eval : NuxmvAst.t -> type_error check_result
+val type_eval : NuxmvAst.t -> (env, type_error) result
