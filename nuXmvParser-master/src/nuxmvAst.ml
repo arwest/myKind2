@@ -30,7 +30,7 @@ type nuxmv_expr =
     | CRange of Position.t * int * int
 
     (* Function Call *)
-    (*| Call of Position.t * comp_ident * nuxmv_expr list*)
+    | Call of Position.t * comp_ident * nuxmv_expr list
 
     (* Boolean operators *)
     | Not of Position.t * nuxmv_expr
@@ -86,8 +86,8 @@ type nuxmv_expr =
 (* Complex Identifiers *)
 and comp_ident = 
     | CIdent of Position.t * ident
-    | PerIdent of Position.t * ident * comp_ident
-    (*| BrackIdent of Position.t * comp_ident * expr_type (* These are more advanced than the exampls I have, so I will skip for now *)
+    (* | PerIdent of Position.t * comp_ident * ident
+    | BrackIdent of Position.t * comp_ident * expr_type (* These are more advanced than the exampls I have, so I will skip for now *)
     | Self of Position.t *)
     
 and expr_type = 

@@ -67,7 +67,7 @@ rule token = parse
   | "real"             { P.REAL }
   | "TRUE"             { P.TRUE }
   | "FALSE"            { P.FALSE }
-  | '.'                { P.PERIOD }
+  (*| '.'                { P.PERIOD } *)
   | '?'                { P.THEN }
   | ".."               { P.DPERIOD }
   | ';'                { P.SEMICOLON }
