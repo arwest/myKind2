@@ -42,7 +42,6 @@ type type_error =
     | EnumValueExist of Position.t * string
     | EnumNotContain of Position.t * string
 <<<<<<< HEAD
-<<<<<<< HEAD
     | MainError of Position.t
     | MissingModule of Position.t * string
     | ModuleCallTooMany of Position.t * int * int
@@ -50,12 +49,6 @@ type type_error =
     | AccessOperatorAppliedToNonModule of Position.t * string
 =======
 >>>>>>> parent of 5827752... progress on adding modules to ast and checkers
-=======
-    | MainError
-    | MissingModule of Position.t * string
-    | ModuleCallTooMany of Position.t * int * int
-    | ModuleCallMissing of Position.t * int * int
->>>>>>> parent of 625c9e1... adding module implementation into nuXmv parser and checker to return the env (building successfully)
 
 type 'a check_result = 
     | CheckOk
@@ -63,4 +56,4 @@ type 'a check_result =
 
 val semantic_eval: NuxmvAst.t ->  semantic_error_type check_result
 
-val type_eval : NuxmvAst.t -> type_error check_result
+val type_eval : NuxmvAst.t -> (env, type_error) result

@@ -43,7 +43,6 @@ type type_error =
     | EnumValueExist of Position.t * string
     | EnumNotContain of Position.t * string
 <<<<<<< HEAD
-<<<<<<< HEAD
     | MainError of Position.t (* Main module not defined in program *)
     | MissingModule of Position.t * string
     | ModuleCallTooMany of Position.t * int * int (* Given -> Expected *)
@@ -53,12 +52,6 @@ type type_error =
 
 type env = (string * nuxmv_ast_type) list
 >>>>>>> parent of 5827752... progress on adding modules to ast and checkers
-=======
-    | MainError (* Main module not defined in program *)
-    | MissingModule of Position.t * string
-    | ModuleCallTooMany of Position.t * int * int (* Given -> Expected *)
-    | ModuleCallMissing of Position.t * int * int (* Given -> Expected *)
->>>>>>> parent of 625c9e1... adding module implementation into nuXmv parser and checker to return the env (building successfully)
 
 type 'a check_result = 
     | CheckOk
@@ -77,7 +70,7 @@ let rec s_eval_expr (ltl: bool) (next:bool) (expr: A.nuxmv_expr) : semantic_erro
     | A.CFloat _ -> CheckOk
     | A.Ident _ -> CheckOk
     | A.CRange (p, i1, i2) -> if i1 <= i2 then CheckOk else CheckError (RangeLowerValue (p))
-    | A.Call (_, ci, nel) -> (
+    (* | A.Call (_, ci, nel) -> (
         let result1 = s_eval_complex_id ci in
         match result1 with
         | CheckError _ -> result1
@@ -88,14 +81,10 @@ let rec s_eval_expr (ltl: bool) (next:bool) (expr: A.nuxmv_expr) : semantic_erro
             | Some res -> res
             | None -> CheckOk (* How to deal with function call return types *) 
 <<<<<<< HEAD
-<<<<<<< HEAD
     ) *)
 =======
                             )
 >>>>>>> parent of 5827752... progress on adding modules to ast and checkers
-=======
-    )
->>>>>>> parent of 625c9e1... adding module implementation into nuXmv parser and checker to return the env (building successfully)
     | A.Not (_, e) -> s_eval_expr ltl next e
     | A.And (_, e1, e2) -> (
         match s_eval_expr ltl next e1 with
@@ -260,6 +249,7 @@ and s_eval_expr_type (expr_type: A.expr_type) : semantic_error_type check_result
 and s_eval_complex_id (ci: A.comp_ident):  semantic_error_type check_result =
     match ci with
     | CIdent _ -> CheckOk
+    | PerIdent _ -> CheckOk
 
 let rec s_eval_state_var_decl (svdl: A.state_var_decl list) :  semantic_error_type check_result =
     match svdl with
@@ -350,7 +340,7 @@ let rec t_eval_expr (in_enum : (bool * env)) (env : env) (expr: A.nuxmv_expr)  :
             | Some (s,t) -> Ok t 
             | None -> Error (MissingVariable (p, id)))
     | A.CRange (p, i1, i2) -> Ok IntT (*TODO: ask Daniel if changing Ranges to Ints make sense for type checking purposes *)
-    | A.Call (p, ci, nel) -> Ok BoolT (* TODO: figure out how to deal with the call *)
+    (*| A.Call (p, ci, nel) -> Ok BoolT (* TODO: figure out how to deal with the call *) *)
     | A.Not (p, e) ->( 
         match t_eval_expr in_enum env e with
         | Ok t when t = BoolT -> Ok BoolT
@@ -666,6 +656,12 @@ let rec t_eval_complex_id (env : env) (ci: A.comp_ident):  (nuxmv_ast_type, type
         match List.find_opt (fun x -> match x with (s,t) when s = id -> true | _ -> false) env with
         | Some (s,t) -> Ok t
         | None -> Error (MissingVariable (pos, id)))
+    | PerIdent (pos, id, cid) -> (
+        match find_opt (fun x -> match x with (s,_) when s = id -> true | _ -> false) env with
+        | Some (id, ModuleInstance (mod_name, mod_env) ) -> t_eval_complex_id mod_env cid
+        | Some _ -> Error (AccessOperatorAppliedToNonModule (pos, id))
+        | None -> Error (MissingVariable (pos, id))
+    )
 
 let rec t_eval_enum_var_decl (etvl: A.enum_type_value list) : (((string * nuxmv_ast_type) list, type_error) result)=
     let exist = fun y x -> match x with (s,t) -> if s = y then true else false in
@@ -714,11 +710,12 @@ let rec t_eval_state_var_decl (env : env) (svdl: A.state_var_decl list) : (env, 
                     if num_id > num_exp then Error (ModuleCallMissing (pos, num_exp, num_id))
                     else if num_id < num_exp then Error (ModuleCallTooMany (pos, num_exp, num_id))
                     else (
-                        let mod_param_env = set_param_values param_ids  [] in
+                        let mod_param_env = set_param_values param_ids values [] in
                         match type_eval_module_element_list mod_param_env mel mod_def with
                         | Ok mod_env -> (
                             let mod_i = ModuleInstance  (id, mod_env) in
-                            let env' = (i, mod_i) :: env in t_eval_state_var_decl env' t mod_def
+                            let env' = (i, mod_i) :: env in 
+                            t_eval_state_var_decl env' t mod_def
                         )
                         | Error e -> Error e
                     )
@@ -870,11 +867,13 @@ let t_eval_module_element (env : env) (me : A.module_element): (env, type_error)
     | A.TransConst (_, expr_type) -> (
         match t_eval_expr_type (false, []) env expr_type with
         | Ok _ -> Ok env
-        | Error e -> Error e)
+        | Error e -> Error e
+    )
     | A.LtlSpec (_, expr_type) -> (
         match t_eval_expr_type (false, []) env expr_type with
         | Ok _ -> Ok env
-        | Error e -> Error e)
+        | Error e -> Error e
+    )
 
 let rec type_eval_module_element_list (env: env) (mel: A.module_element list) : (env, type_error) result = 
     match mel with
@@ -882,28 +881,25 @@ let rec type_eval_module_element_list (env: env) (mel: A.module_element list) : 
     | me :: t -> 
 <<<<<<< HEAD
         match t_eval_module_element env me mod_def with
-<<<<<<< HEAD
         | Ok env' -> type_eval_module_element_list env' t mod_def
 =======
         match t_eval_module_element env me with
         | Ok env' -> type_eval_module_element_list env' t
 >>>>>>> parent of 5827752... progress on adding modules to ast and checkers
-=======
-        | Ok env' -> type_eval_module_element_list env' t
->>>>>>> parent of 625c9e1... adding module implementation into nuXmv parser and checker to return the env (building successfully)
         | error -> error
 
 let rec type_eval_rec (env : env) (ml:A.nuxmv_module list) : (env, type_error) result = 
     match ml with
 <<<<<<< HEAD
     | [] -> (
-        let get_main = fun x -> match x with A.CustomModule (id, _, _) when x = "main" -> true | _ -> false in
+        let get_main = fun x -> match x with A.CustomModule (id, [], _) when id = "main" -> true | _ -> false in
         match find_opt get_main ml with
-        | Some c_mod -> type_eval_module_element_list [] c_mod mod_def
-        | None -> Error MainError
+        | Some A.CustomModule (id, [], mel) -> type_eval_module_element_list [] mel mod_def
+        | None -> Error (MainError Position.create_empty_position)
     )
     | c_mod :: t -> 
         type_eval_rec (c_mod :: mod_def) t 
+
 let type_eval (ml : A.nuxmv_module list) : (env, type_error) result = type_eval_rec [] ml
 =======
     | [] -> Ok env
