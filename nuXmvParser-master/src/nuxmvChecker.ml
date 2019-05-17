@@ -1,17 +1,13 @@
 (* Copyright (c) 2019 by the Board of Trustees of the University of Iowa
-
    Licensed under the Apache License, Version 2.0 (the "License"); you
    may not use this file except in compliance with the License.  You
    may obtain a copy of the License at
-
    http://www.apache.org/licenses/LICENSE-2.0 
-
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
    implied. See the License for the specific language governing
    permissions and limitations under the License. 
-
 *)
 
 (** @author Andrew West *)
@@ -42,23 +38,8 @@ type type_error =
     | VariableAlreadyDefined of Position.t * string
     | EnumValueExist of Position.t * string
     | EnumNotContain of Position.t * string
-<<<<<<< HEAD
-<<<<<<< HEAD
-    | MainError of Position.t (* Main module not defined in program *)
-    | MissingModule of Position.t * string
-    | ModuleCallTooMany of Position.t * int * int (* Given -> Expected *)
-    | ModuleCallMissing of Position.t * int * int (* Given -> Expected *)
-    | AccessOperatorAppliedToNonModule of Position.t * string
-=======
 
 type env = (string * nuxmv_ast_type) list
->>>>>>> parent of 5827752... progress on adding modules to ast and checkers
-=======
-    | MainError (* Main module not defined in program *)
-    | MissingModule of Position.t * string
-    | ModuleCallTooMany of Position.t * int * int (* Given -> Expected *)
-    | ModuleCallMissing of Position.t * int * int (* Given -> Expected *)
->>>>>>> parent of 625c9e1... adding module implementation into nuXmv parser and checker to return the env (building successfully)
 
 type 'a check_result = 
     | CheckOk
@@ -87,15 +68,7 @@ let rec s_eval_expr (ltl: bool) (next:bool) (expr: A.nuxmv_expr) : semantic_erro
             match result2 with
             | Some res -> res
             | None -> CheckOk (* How to deal with function call return types *) 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    ) *)
-=======
                             )
->>>>>>> parent of 5827752... progress on adding modules to ast and checkers
-=======
-    )
->>>>>>> parent of 625c9e1... adding module implementation into nuXmv parser and checker to return the env (building successfully)
     | A.Not (_, e) -> s_eval_expr ltl next e
     | A.And (_, e1, e2) -> (
         match s_eval_expr ltl next e1 with
@@ -698,36 +671,6 @@ let rec t_eval_state_var_decl (env : env) (svdl: A.state_var_decl list) : (env, 
         (match svd with 
         | A.ModuleType (p, i, mts) -> 
             (match mts with 
-<<<<<<< HEAD
-            | A.ModuleTypeSpecifier (pos, id, etl) -> 
-            let mapped = List.map (t_eval_expr_type (false, []) env) etl in
-            let result = find_opt (fun x -> match x with Ok _ -> false | Error _ -> true) mapped in
-            match result with
-            | Some Error e -> Error e
-            | None -> (
-                let find_mod = fun x -> match x with A.CustomModule (m_id, _, _) when id = m_id -> true | _ -> false in
-                match find_opt find_mod mod_def with
-                | Some (A.CustomModule (mod_id, param_ids, mel)) -> (
-                    let values = List.map (fun x -> match x with Ok v -> v | _ -> assert false) mapped in
-                    let num_exp = List.length values in
-                    let num_id = List.length param_ids in
-                    if num_id > num_exp then Error (ModuleCallMissing (pos, num_exp, num_id))
-                    else if num_id < num_exp then Error (ModuleCallTooMany (pos, num_exp, num_id))
-                    else (
-                        let mod_param_env = set_param_values param_ids  [] in
-                        match type_eval_module_element_list mod_param_env mel mod_def with
-                        | Ok mod_env -> (
-                            let mod_i = ModuleInstance  (id, mod_env) in
-                            let env' = (i, mod_i) :: env in t_eval_state_var_decl env' t mod_def
-                        )
-                        | Error e -> Error e
-                    )
-                )
-                | None -> Error (MissingModule (pos, id))
-            )
-            | _ -> assert false
-        )
-=======
                 | A.ModuleTypeSpecifier (pos, id, etl) -> 
                 let mapped = List.map (t_eval_expr_type (false, []) env) etl in
                 let result = List.find_opt (fun x -> match x with Ok _ -> false | Error _ -> true) mapped in
@@ -735,7 +678,6 @@ let rec t_eval_state_var_decl (env : env) (svdl: A.state_var_decl list) : (env, 
                 | Some Error e -> Error e
                 | None -> Ok env (* TODO: How to do module calling, skipping this for now *) 
                 | _ -> assert false)
->>>>>>> parent of 5827752... progress on adding modules to ast and checkers
         | A.SimpleType (p, i, sts) -> 
             (match sts with
                 (* TODO: Check that the identifier isn't being used already *)
@@ -880,32 +822,12 @@ let rec type_eval_module_element_list (env: env) (mel: A.module_element list) : 
     match mel with
     | [] -> Ok env
     | me :: t -> 
-<<<<<<< HEAD
-        match t_eval_module_element env me mod_def with
-<<<<<<< HEAD
-        | Ok env' -> type_eval_module_element_list env' t mod_def
-=======
         match t_eval_module_element env me with
         | Ok env' -> type_eval_module_element_list env' t
->>>>>>> parent of 5827752... progress on adding modules to ast and checkers
-=======
-        | Ok env' -> type_eval_module_element_list env' t
->>>>>>> parent of 625c9e1... adding module implementation into nuXmv parser and checker to return the env (building successfully)
         | error -> error
 
 let rec type_eval_rec (env : env) (ml:A.nuxmv_module list) : (env, type_error) result = 
     match ml with
-<<<<<<< HEAD
-    | [] -> (
-        let get_main = fun x -> match x with A.CustomModule (id, _, _) when x = "main" -> true | _ -> false in
-        match find_opt get_main ml with
-        | Some c_mod -> type_eval_module_element_list [] c_mod mod_def
-        | None -> Error MainError
-    )
-    | c_mod :: t -> 
-        type_eval_rec (c_mod :: mod_def) t 
-let type_eval (ml : A.nuxmv_module list) : (env, type_error) result = type_eval_rec [] ml
-=======
     | [] -> Ok env
     | A.CustomModule (_, _, mel) :: t -> 
         match type_eval_module_element_list env mel with
@@ -915,4 +837,3 @@ let type_eval (ml : A.nuxmv_module list) : type_error check_result =
     match type_eval_rec [] ml with
     | Ok _ -> CheckOk
     | Error e -> CheckError e
->>>>>>> parent of 5827752... progress on adding modules to ast and checkers
