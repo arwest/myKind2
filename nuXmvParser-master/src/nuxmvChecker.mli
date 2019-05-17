@@ -32,9 +32,7 @@ type nuxmv_ast_type =
     | BoolT
     | SetT of nuxmv_ast_type list
     (* | FunT of nuxmv_ast_type list * nuxmv_ast_type *)
-    | ModuleInstance of string * env
-
-and env = (string * nuxmv_ast_type) list
+    (* | ModuleT of (string * nuxmv_ast_type) list *)
 
 type type_error =
     | Expected of Position.t * nuxmv_ast_type list * nuxmv_ast_type
@@ -43,11 +41,14 @@ type type_error =
     | VariableAlreadyDefined of Position.t * string
     | EnumValueExist of Position.t * string
     | EnumNotContain of Position.t * string
+<<<<<<< HEAD
     | MainError of Position.t
     | MissingModule of Position.t * string
     | ModuleCallTooMany of Position.t * int * int
     | ModuleCallMissing of Position.t * int * int
     | AccessOperatorAppliedToNonModule of Position.t * string
+=======
+>>>>>>> parent of 5827752... progress on adding modules to ast and checkers
 
 type 'a check_result = 
     | CheckOk
