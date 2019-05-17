@@ -31,11 +31,6 @@ type parse_error =
   | VariableAlreadyDefinedError of Position.t (* * string *)
   | EnumValueExistenceError of Position.t (* *string *)
   | EnumNotContainValue of Position.t (* * string *)
-  | MainModuleMissing of Position.t
-  | MissingModule of Position.t (* * string *)
-  | ModuleCalledTooManyArgs of Position.t (* * int * int *)
-  | ModuleCalledMissingArgs of Position.t (* * int * int *)
-  | AccessOperatorAppliedToNonModule of Position.t (* * string *)
 
 val from_channel: in_channel -> (output, parse_error) result
 
