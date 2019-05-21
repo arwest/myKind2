@@ -42,7 +42,7 @@ exception Ltl_Use_Error
 (* %token SELF *)
 %token ASSIGNMENT
 %token LPAREN RPAREN LCURLBRACK RCURLBRACK LSQBRACK RSQBRACK
-%token COMMA SEMICOLON COLON (*PERIOD*) DPERIOD
+%token COMMA SEMICOLON COLON PERIOD DPERIOD
 %token EOF
 
 (* Priorities and associativity of operators, lowest first *)
@@ -127,17 +127,11 @@ assign_constraint: ASSIGN ael = nonempty_list(assign_element) { A.AssignConst (m
     ;
 
 assign_element:
-    | INIT LPAREN ci = complex_indentifier RPAREN ASSIGNMENT e = simple_expr SEMICOLON { A.InitAssign (mk_pos $startpos, ci, e) }
-    | NEXT LPAREN ci = complex_indentifier RPAREN ASSIGNMENT e = simple_expr SEMICOLON { A.NextAssign (mk_pos $startpos, ci, e) }
-    | ci = complex_indentifier ASSIGNMENT e = next_expr { A.Assign (mk_pos $startpos, ci, e) }
+    | INIT LPAREN id = ID RPAREN ASSIGNMENT e = simple_expr SEMICOLON { A.InitAssign (mk_pos $startpos, id, e) }
+    | NEXT LPAREN id = ID RPAREN ASSIGNMENT e = simple_expr SEMICOLON { A.NextAssign (mk_pos $startpos, id, e) }
+    | id = ID ASSIGNMENT e = next_expr { A.Assign (mk_pos $startpos, id, e) }
     ;
 
-complex_indentifier:
-    | i = ID { A.CIdent (mk_pos $startpos, i) }
-(*   | ci = complex_indentifier PERIOD i = ID { A.PerIdent (mk_pos $startpos, ci, i) }
-    | ci = complex_indentifier LSQBRACK e = simple_expr RSQBRACK { BrackIdent (mk_pos $startpos, ci, e) }
-    | SELF { A.Self (mk_pos $startpos) } *)
-    ;
 
 (* Trans Constraints *)
 trans_constraint: TRANS e = next_expr option(SEMICOLON) { A.TransConst (mk_pos $startpos, e) } 
@@ -160,10 +154,20 @@ ltl_specification: LTLSPEC le = ltl_expr option(SEMICOLON) { A.LtlSpec (mk_pos $
     | b = expr { A.NextExpr(mk_pos $startpos, b) }
     ;
 
+
+complex_indentifier:
+    | i = ID { A.CIdent (mk_pos $startpos, i) }
+    | ci = complex_indentifier PERIOD i = ID { A.PerIdent (mk_pos $startpos, ci, i) }
+    (* 
+        | ci = complex_indentifier LSQBRACK e = simple_expr RSQBRACK { BrackIdent (mk_pos $startpos, ci, e) }
+        | SELF { A.Self (mk_pos $startpos) } 
+    *)
+    ;
+
 (* General Purpose Rules *)
 expr:
     | c = constant { c }
-    | f = function_call { f }
+    (* | f = function_call { f } *)
     | NOT e = expr { A.Not (mk_pos $startpos, e) }
     | e1 = expr AND e2 = expr { A.And (mk_pos $startpos, e1, e2) }
     | e1 = expr OR e2 = expr { A.Or (mk_pos $startpos, e1, e2) }
@@ -209,14 +213,14 @@ case_element:
     | e1 = expr COLON e2 = expr SEMICOLON { (e1, e2) }
     ;
 
-function_call: 
+(* function_call: 
     | ci = complex_indentifier LPAREN el = function_call_params RPAREN { A.Call (mk_pos $startpos, ci, el) }
     ;
 
 function_call_params:
     | e = expr { [e] }
     | e = expr COMMA p = function_call_params  {e :: p}
-    ;
+    ; *)
 
 basic_expr_list:
     | el = separated_nonempty_list(COMMA, simple_expr) { el }
