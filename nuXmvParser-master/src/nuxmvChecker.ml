@@ -66,7 +66,7 @@ let rec s_eval_expr (ltl: bool) (next:bool) (expr: A.nuxmv_expr) : semantic_erro
     | A.False _ -> CheckOk
     | A.CInt _ -> CheckOk
     | A.CFloat _ -> CheckOk
-    | A.Ident _ -> CheckOk
+    | A.Ident (_, ci) -> s_eval_complex_id ci
     | A.CRange (p, i1, i2) -> if i1 <= i2 then CheckOk else CheckError (RangeLowerValue (p))
     (* | A.Call (_, ci, nel) -> (
         let result1 = s_eval_complex_id ci in
@@ -308,14 +308,22 @@ let enum_contains_value (enum_type_list: (string * nuxmv_ast_type) list ) (id : 
     | false -> Error (EnumNotContain (pos, id))
 
 
-let rec t_eval_complex_id (env : env) (ci: A.comp_ident):  (nuxmv_ast_type, type_error) result =
+let rec t_eval_complex_id (in_enum : (bool * env)) (env : env) (ci: A.comp_ident):  (nuxmv_ast_type, type_error) result =
     match ci with
-    | CIdent (pos, id) -> (
-        match lookup_opt id env with
-        | Some (s,t) -> Ok t
-        | None -> Error (MissingVariable (pos, id)))
+    | CIdent (pos, id) -> ( 
+        if fst in_enum 
+        then
+            match enum_contains_value (snd in_enum) id pos with
+            | Ok _ -> Ok BoolT
+            | Error e -> Error e
+        else
+            let res = lookup_opt id env in 
+            match res with
+            | Some (s,t) -> Ok t 
+            | None -> Error (MissingVariable (pos, id))
+    )
     | PerIdent (pos, cid, id) -> (
-        let mi = t_eval_complex_id env cid in
+        let mi = t_eval_complex_id in_enum env cid in
         match mi with 
         | Ok (ModuleInstance (mod_name, mod_env) ) -> (
             match lookup_opt id mod_env with
@@ -330,19 +338,9 @@ let rec t_eval_expr (in_enum : (bool * env)) (env : env) (expr: A.nuxmv_expr)  :
     match expr with
     | A.True _ -> Ok BoolT
     | A.False _ -> Ok BoolT
-    | A.CInt (pos, i) -> if fst in_enum then t_eval_expr in_enum env (Ident (pos, string_of_int i)) else Ok IntT
+    | A.CInt (pos, i) -> if fst in_enum then t_eval_expr in_enum env (A.Ident (pos, CIdent( pos, string_of_int i))) else Ok IntT
     | A.CFloat _ -> Ok FloatT
-    | A.Ident (p, id) -> (
-        if fst in_enum 
-        then
-            match enum_contains_value (snd in_enum) id p with
-            | Ok _ -> Ok BoolT
-            | Error e -> Error e
-        else
-            let res = lookup_opt id env in 
-            match res with
-            | Some (s,t) -> Ok t 
-            | None -> Error (MissingVariable (p, id)))
+    | A.Ident (p, ci) -> t_eval_complex_id in_enum env ci
     | A.CRange (p, i1, i2) -> Ok IntT (*TODO: ask Daniel if changing Ranges to Ints make sense for type checking purposes *)
     (* | A.Call (p, ci, nel) -> Ok BoolT (* TODO: figure out how to deal with the call *) *)
     | A.Not (p, e) ->( 

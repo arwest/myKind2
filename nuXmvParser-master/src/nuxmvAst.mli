@@ -23,7 +23,7 @@ type nuxmv_expr =
     | False of Position.t
     | CInt of Position.t * int
     | CFloat of Position.t * float
-    | Ident of Position.t * ident
+    | Ident of Position.t * comp_ident
     | CRange of Position.t * int * int
     (* | Call of Position.t * comp_ident * nuxmv_expr list *)
     | Not of Position.t * nuxmv_expr
@@ -69,7 +69,7 @@ and comp_ident =
         | Self of Position.t 
     *)
     
-and expr_type = 
+type expr_type = 
     | LtlExpr of Position.t * nuxmv_expr
     | NextExpr of Position.t * nuxmv_expr
     | SimpleExpr of Position.t * nuxmv_expr

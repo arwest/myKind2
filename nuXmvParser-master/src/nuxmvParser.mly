@@ -234,7 +234,7 @@ array_expr:
 constant:
     | FALSE { A.False (mk_pos $startpos) }
     | TRUE { A.True (mk_pos $startpos) }
-    | s = ID { A.Ident (mk_pos $startpos, s) }
+    | ci = complex_indentifier { A.Ident (mk_pos $startpos, ci) }
     | i = CINT { A.CInt (mk_pos $startpos, i) }
     | r = CREAL { A.CFloat (mk_pos $startpos, r) }
     | FRACTIONAL c1 = CINT DIV c2 = CINT { let f1 = float_of_int (c1) in
