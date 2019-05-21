@@ -68,7 +68,31 @@ let read_input_from_file filename =
   
   | Error (NuxmvInput.EnumNotContainValue pos) ->
       Format.eprintf "%a: Enum does not contain value of given id @." 
-        Position.pp_print_position pos   
+        Position.pp_print_position pos
+
+  | Error (NuxmvInput.MainModuleMissing pos) ->
+      Format.eprintf "%a: Main module is missing from program @." 
+        Position.pp_print_position pos
+
+  | Error (NuxmvInput.MissingModule pos) ->
+      Format.eprintf "%a: Module with given id is not defined in the program @." 
+        Position.pp_print_position pos
+
+  | Error (NuxmvInput.ModuleCalledTooManyArgs pos) ->
+      Format.eprintf "%a: Module called with too many arguments @." 
+        Position.pp_print_position pos
+
+  | Error (NuxmvInput.ModuleCalledMissingArgs pos) ->
+      Format.eprintf "%a: Module called with missing arguments @." 
+        Position.pp_print_position pos
+
+  | Error (NuxmvInput.AccessOperatorAppliedToNonModule pos) ->
+      Format.eprintf "%a: Variable access operator not avaliable for non-module instance variables @." 
+        Position.pp_print_position pos
+
+  | Error (NuxmvInput.MainModuleHasParams pos) ->
+      Format.eprintf "%a: Module 'main' not allowed to have any argument parameters defined @." 
+        Position.pp_print_position pos
 
   | exception (Sys_error msg) ->
       Format.eprintf "%s@." msg
