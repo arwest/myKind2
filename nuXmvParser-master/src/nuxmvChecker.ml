@@ -24,12 +24,14 @@ type nuxmv_ast_type =
     | IntT
     | SymbolicT
     | FloatT
-    | EnumT of (string * nuxmv_ast_type) list
+    | EnumT of env
     | ArrayT of nuxmv_ast_type list
     | BoolT
     | SetT of nuxmv_ast_type list
     (* | FunT of nuxmv_ast_type list * nuxmv_ast_type *)
-    (* | ModuleT of (string * nuxmv_ast_type) list *)
+    | ModuleInstance of string * env
+
+and env = (string * nuxmv_ast_type) list
 
 type type_error =
     | Expected of Position.t * nuxmv_ast_type list * nuxmv_ast_type
@@ -38,15 +40,23 @@ type type_error =
     | VariableAlreadyDefined of Position.t * string
     | EnumValueExist of Position.t * string
     | EnumNotContain of Position.t * string
-
-type env = (string * nuxmv_ast_type) list
+    | MainError of Position.t (* Main module not defined in program *)
+    | MissingModule of Position.t * string
+    | ModuleCallTooMany of Position.t * int * int (* Given -> Expected *)
+    | ModuleCallMissing of Position.t * int * int (* Given -> Expected *)
+    | AccessOperatorAppliedToNonModule of Position.t
+    | MainModuleHasParams of Position.t (* Main module has parameters defined *)
 
 type 'a check_result = 
     | CheckOk
     | CheckError of 'a
 
+let find_opt (func : ('a -> bool)) (lst: 'a list) : 'a option =
+    try let ans = List.find func lst in Some ans
+    with Not_found -> None
+
 let lookup_opt (id : string) (lst : (string * 'a) list ) : (string * 'a) option = 
-    List.find_opt (fun x -> match x with | (s,t) when s = id -> true | _ -> false) lst
+    find_opt (fun x -> match x with | (s,t) when s = id -> true | _ -> false) lst
 
 (* SEMANTIC CHECKER *)
 
@@ -58,17 +68,17 @@ let rec s_eval_expr (ltl: bool) (next:bool) (expr: A.nuxmv_expr) : semantic_erro
     | A.CFloat _ -> CheckOk
     | A.Ident _ -> CheckOk
     | A.CRange (p, i1, i2) -> if i1 <= i2 then CheckOk else CheckError (RangeLowerValue (p))
-    | A.Call (_, ci, nel) -> (
+    (* | A.Call (_, ci, nel) -> (
         let result1 = s_eval_complex_id ci in
         match result1 with
         | CheckError _ -> result1
         | CheckOk -> 
             let mapped2 = List.map (s_eval_expr ltl next) nel in
-            let result2 = List.find_opt (fun x -> x != CheckOk) mapped2 in
+            let result2 = find_opt (fun x -> x != CheckOk) mapped2 in
             match result2 with
             | Some res -> res
             | None -> CheckOk (* How to deal with function call return types *) 
-                            )
+    ) *)
     | A.Not (_, e) -> s_eval_expr ltl next e
     | A.And (_, e1, e2) -> (
         match s_eval_expr ltl next e1 with
@@ -143,7 +153,7 @@ let rec s_eval_expr (ltl: bool) (next:bool) (expr: A.nuxmv_expr) : semantic_erro
         if ltl then CheckError (LtlUse (p))
         else
             let mapped = List.map (s_eval_expr ltl false) el in
-            let result = List.find_opt (fun x -> x != CheckOk) mapped in
+            let result = find_opt (fun x -> x != CheckOk) mapped in
             match result with
             | Some res -> res
             | None -> CheckOk )
@@ -151,12 +161,12 @@ let rec s_eval_expr (ltl: bool) (next:bool) (expr: A.nuxmv_expr) : semantic_erro
         if ltl then CheckError (LtlUse (p))
         else
             let mapped1 = List.map (s_eval_expr ltl next) (List.map fst el) in
-            let result1 = List.find_opt (fun x -> x != CheckOk) mapped1 in
+            let result1 = find_opt (fun x -> x != CheckOk) mapped1 in
             match result1 with
             | Some res -> res
             | None -> 
                 let mapped2 = List.map (s_eval_expr ltl next) (List.map snd el) in
-                let result2 = List.find_opt (fun x -> x != CheckOk) mapped2 in
+                let result2 = find_opt (fun x -> x != CheckOk) mapped2 in
                 match result2 with
                 | Some res -> res
                 | None -> CheckOk )
@@ -226,13 +236,14 @@ and s_eval_expr_type (expr_type: A.expr_type) : semantic_error_type check_result
     | A.SimpleExpr (_, expr) -> s_eval_expr false false expr
     | A.ArrayExpr (_, etl) -> 
         let result_list = List.map s_eval_expr_type etl in
-        match List.find_opt (fun x -> x != CheckOk) result_list with
+        match find_opt (fun x -> x != CheckOk) result_list with
         | None -> CheckOk
         | Some e -> e
 
 and s_eval_complex_id (ci: A.comp_ident):  semantic_error_type check_result =
     match ci with
     | CIdent _ -> CheckOk
+    | PerIdent _ -> CheckOk
 
 let rec s_eval_state_var_decl (svdl: A.state_var_decl list) :  semantic_error_type check_result =
     match svdl with
@@ -243,7 +254,7 @@ let rec s_eval_state_var_decl (svdl: A.state_var_decl list) :  semantic_error_ty
             match mts with 
             | ModuleTypeSpecifier (pos, id, etl) -> (
                 let mapped = List.map s_eval_expr_type etl in
-                let result = List.find_opt (fun x -> x != CheckOk) mapped in
+                let result = find_opt (fun x -> x != CheckOk) mapped in
                 match result with
                 | Some res -> res
                 | None -> s_eval_state_var_decl t) )
@@ -267,18 +278,9 @@ let rec s_eval_assign_const (acl: A.assign_const list):  semantic_error_type che
     match acl with
     | [] -> CheckOk
     | svd :: t -> match svd with
-        | A.InitAssign (pos, ci, et) -> (
-            match s_eval_complex_id ci with
-            | CheckOk -> s_eval_expr_type et
-            | other -> other)
-        | A.NextAssign (pos, ci, et) -> (
-            match s_eval_complex_id ci with
-            | CheckOk -> s_eval_expr_type et
-            | other -> other)
-        | A.Assign (pos, ci, et) -> (
-            match s_eval_complex_id ci with
-            | CheckOk -> s_eval_expr_type et
-            | other -> other)
+        | A.InitAssign (pos, _, et) -> s_eval_expr_type et
+        | A.NextAssign (pos, _, et) -> s_eval_expr_type et
+        | A.Assign (pos, _, et) -> s_eval_expr_type et
 
 let s_eval_module_element (me : A.module_element): semantic_error_type check_result = 
     match me with
@@ -293,7 +295,7 @@ let rec semantic_eval (ml:A.nuxmv_module list) : semantic_error_type check_resul
     | [] -> CheckOk
     | A.CustomModule (_, _, mel) :: t -> 
         (let mapped = List.map s_eval_module_element mel in
-        let result = List.find_opt (fun x -> x != CheckOk) mapped in
+        let result = find_opt (fun x -> x != CheckOk) mapped in
         match result with
         | Some res -> res
         | None -> semantic_eval t)
@@ -304,6 +306,25 @@ let enum_contains_value (enum_type_list: (string * nuxmv_ast_type) list ) (id : 
     match List.exists check_list enum_type_list with
     | true -> Ok true
     | false -> Error (EnumNotContain (pos, id))
+
+
+let rec t_eval_complex_id (env : env) (ci: A.comp_ident):  (nuxmv_ast_type, type_error) result =
+    match ci with
+    | CIdent (pos, id) -> (
+        match lookup_opt id env with
+        | Some (s,t) -> Ok t
+        | None -> Error (MissingVariable (pos, id)))
+    | PerIdent (pos, cid, id) -> (
+        let mi = t_eval_complex_id env cid in
+        match mi with 
+        | Ok (ModuleInstance (mod_name, mod_env) ) -> (
+            match lookup_opt id mod_env with
+            | Some (s,t) -> Ok t
+            | None -> Error (MissingVariable (pos, id))
+        )
+        | Ok _ -> Error (AccessOperatorAppliedToNonModule (pos))
+        | error -> error
+    )
 
 let rec t_eval_expr (in_enum : (bool * env)) (env : env) (expr: A.nuxmv_expr)  : (nuxmv_ast_type, type_error) result = 
     match expr with
@@ -323,7 +344,7 @@ let rec t_eval_expr (in_enum : (bool * env)) (env : env) (expr: A.nuxmv_expr)  :
             | Some (s,t) -> Ok t 
             | None -> Error (MissingVariable (p, id)))
     | A.CRange (p, i1, i2) -> Ok IntT (*TODO: ask Daniel if changing Ranges to Ints make sense for type checking purposes *)
-    | A.Call (p, ci, nel) -> Ok BoolT (* TODO: figure out how to deal with the call *)
+    (* | A.Call (p, ci, nel) -> Ok BoolT (* TODO: figure out how to deal with the call *) *)
     | A.Not (p, e) ->( 
         match t_eval_expr in_enum env e with
         | Ok t when t = BoolT -> Ok BoolT
@@ -499,21 +520,21 @@ let rec t_eval_expr (in_enum : (bool * env)) (env : env) (expr: A.nuxmv_expr)  :
         | ( _ , Error e) -> Error e)
     | A.SetExp (p, el) ->  (
         let mapped = List.map (t_eval_expr in_enum env) el in
-        let result = List.find_opt (fun x -> match x with | Ok _ -> false | _ -> true) mapped in
+        let result = find_opt (fun x -> match x with | Ok _ -> false | _ -> true) mapped in
         match result with
         | Some e -> e
         | None -> Ok (SetT (List.map (fun x -> match x with Ok t -> t | _ -> assert false) mapped)))
     | A.CaseExp (p, el) -> (
         let left_expr_res = List.map (t_eval_expr (false, []) env) (List.map fst el) in
-        match List.find_opt (fun x -> match x with Ok BoolT -> false | _ -> true) left_expr_res with
+        match find_opt (fun x -> match x with Ok BoolT -> false | _ -> true) left_expr_res with
         | Some (Error e) -> Error e
         | Some (Ok t) -> Error (Expected (p, [BoolT], t))
         | None -> (
             let right_expr_res = List.map (t_eval_expr in_enum env) (List.map snd el) in 
-            match List.find_opt (fun x -> match x with Ok _ -> false | _ -> true) right_expr_res with
+            match find_opt (fun x -> match x with Ok _ -> false | _ -> true) right_expr_res with
             | Some (Error e) -> Error e
             | None -> (
-                match List.find_opt (fun x -> match x with Ok SetT _ -> true | _ -> false) left_expr_res with
+                match find_opt (fun x -> match x with Ok SetT _ -> true | _ -> false) right_expr_res with
                 | Some _ -> (
                     let turn_into_sets lst = List.map (fun x -> match x with Ok SetT x' -> SetT x' | Ok x'-> SetT [x'] | _ -> assert false) lst in
                     Ok (SetT (turn_into_sets right_expr_res))
@@ -629,16 +650,9 @@ let rec t_eval_expr_type (in_enum: (bool * env)) (env : env) (expr_type: A.expr_
         | e -> e)
     | A.ArrayExpr (_, etl) -> (
         let result_list = List.map (t_eval_expr_type in_enum env) etl in
-        match List.find_opt (fun x -> match x with | Ok _ -> false | Error _ -> true) result_list with
+        match find_opt (fun x -> match x with | Ok _ -> false | Error _ -> true) result_list with
         | Some e -> e
         | None -> Ok (ArrayT (List.map (fun x -> match x with Ok t -> t | _ -> assert false) result_list)))
-
-let rec t_eval_complex_id (env : env) (ci: A.comp_ident):  (nuxmv_ast_type, type_error) result =
-    match ci with
-    | CIdent (pos, id) -> (
-        match List.find_opt (fun x -> match x with (s,t) when s = id -> true | _ -> false) env with
-        | Some (s,t) -> Ok t
-        | None -> Error (MissingVariable (pos, id)))
 
 let rec t_eval_enum_var_decl (etvl: A.enum_type_value list) : (((string * nuxmv_ast_type) list, type_error) result)=
     let exist = fun y x -> match x with (s,t) -> if s = y then true else false in
@@ -673,7 +687,7 @@ let rec t_eval_state_var_decl (env : env) (svdl: A.state_var_decl list) : (env, 
             (match mts with 
                 | A.ModuleTypeSpecifier (pos, id, etl) -> 
                 let mapped = List.map (t_eval_expr_type (false, []) env) etl in
-                let result = List.find_opt (fun x -> match x with Ok _ -> false | Error _ -> true) mapped in
+                let result = find_opt (fun x -> match x with Ok _ -> false | Error _ -> true) mapped in
                 match result with
                 | Some Error e -> Error e
                 | None -> Ok env (* TODO: How to do module calling, skipping this for now *) 
@@ -754,50 +768,50 @@ let rec t_eval_assign_const (env : env) (acl: A.assign_const list): (env, type_e
     | [] -> Ok env
     | svd :: t -> (
         match svd with
-        | A.InitAssign (pos, ci, et) -> (
-            match t_eval_complex_id env ci with
-            | Ok (EnumT lst) -> (
+        | A.InitAssign (pos, id, et) -> (
+            match lookup_opt id env with
+            | Some (_, EnumT lst) -> (
                 match t_eval_expr_type (true, lst) env et with
                 | Ok _ -> Ok env
                 | Error e -> Error e
             )
-            | Ok t -> (
+            | Some (_,t) -> (
                 match t_eval_expr_type (false, []) env et with
                 | Ok t' when t' = t -> Ok env
                 | Ok t' -> Error (NonMatching (pos, t', t))
                 | Error e -> Error e
             )
-            | Error e -> Error e
+            | None -> Error (MissingVariable (pos, id))
         )
-        | A.NextAssign (pos, ci, et) -> (
-            match t_eval_complex_id env ci with
-            | Ok (EnumT lst) -> (
+        | A.NextAssign (pos, id, et) -> (
+            match lookup_opt id env with
+            | Some (_, EnumT lst) -> (
                 match t_eval_expr_type (true, lst) env et with
                 | Ok _ -> Ok env
                 | Error e -> Error e
             )
-            | Ok t -> (
+            | Some (_,t) -> (
                 match t_eval_expr_type (false, []) env et with
                 | Ok t' when t' = t -> Ok env
                 | Ok t' -> Error (NonMatching (pos, t', t))
                 | Error e -> Error e
             )
-            | Error e -> Error e
+            | None -> Error (MissingVariable (pos, id))
         )
-        | A.Assign (pos, ci, et) -> (
-            match t_eval_complex_id env ci with
-            | Ok (EnumT lst) -> (
+        | A.Assign (pos, id, et) -> (
+            match lookup_opt id env with
+            | Some (_, EnumT lst) -> (
                 match t_eval_expr_type (true, lst) env et with
                 | Ok _ -> Ok env
                 | Error e -> Error e
             )
-            | Ok t -> (
+            | Some (_,t) -> (
                 match t_eval_expr_type (false, []) env et with
                 | Ok t' when t' = t -> Ok env
                 | Ok t' -> Error (NonMatching (pos, t', t))
                 | Error e -> Error e
             )
-            | Error e -> Error e
+            | None -> Error (MissingVariable (pos, id))
         )
     )
 
@@ -833,7 +847,7 @@ let rec type_eval_rec (env : env) (ml:A.nuxmv_module list) : (env, type_error) r
         match type_eval_module_element_list env mel with
         | Ok env' -> type_eval_rec env' t
         | error -> error
-let type_eval (ml : A.nuxmv_module list) : type_error check_result = 
+let type_eval (ml : A.nuxmv_module list) : (env,type_error) result = 
     match type_eval_rec [] ml with
-    | Ok _ -> CheckOk
-    | Error e -> CheckError e
+    | Ok env -> Ok env
+    | Error e -> Error e
