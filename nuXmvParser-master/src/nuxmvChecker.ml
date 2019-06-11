@@ -795,18 +795,18 @@ and t_process_define_variables (env : env) (unprocessed_env: (string * A.expr_ty
 and t_eval_assign_const (env : env) (acl: A.assign_const list): (env, type_error) result =
     match acl with
     | [] -> Ok env
-    | svd :: t -> (
+    | svd :: tail -> (
         match svd with
         | A.InitAssign (pos, id, et) -> (
             match lookup_opt id env with
             | Some (_, EnumT lst) -> (
                 match t_eval_expr_type (true, lst) env et with
-                | Ok _ -> Ok env
+                | Ok _ -> t_eval_assign_const env tail
                 | Error e -> Error e
             )
             | Some (_,t) -> (
                 match t_eval_expr_type (false, []) env et with
-                | Ok t' when t' = t -> Ok env
+                | Ok t' when t' = t -> t_eval_assign_const env tail 
                 | Ok t' -> Error (NonMatching (pos, t', t))
                 | Error e -> Error e
             )
@@ -816,12 +816,12 @@ and t_eval_assign_const (env : env) (acl: A.assign_const list): (env, type_error
             match lookup_opt id env with
             | Some (_, EnumT lst) -> (
                 match t_eval_expr_type (true, lst) env et with
-                | Ok _ -> Ok env
+                | Ok _ -> t_eval_assign_const env tail 
                 | Error e -> Error e
             )
             | Some (_,t) -> (
                 match t_eval_expr_type (false, []) env et with
-                | Ok t' when t' = t -> Ok env
+                | Ok t' when t' = t -> t_eval_assign_const env tail 
                 | Ok t' -> Error (NonMatching (pos, t', t))
                 | Error e -> Error e
             )
@@ -831,12 +831,12 @@ and t_eval_assign_const (env : env) (acl: A.assign_const list): (env, type_error
             match lookup_opt id env with
             | Some (_, EnumT lst) -> (
                 match t_eval_expr_type (true, lst) env et with
-                | Ok _ -> Ok env
+                | Ok _ -> t_eval_assign_const env tail 
                 | Error e -> Error e
             )
             | Some (_,t) -> (
                 match t_eval_expr_type (false, []) env et with
-                | Ok t' when t' = t -> Ok env
+                | Ok t' when t' = t -> t_eval_assign_const env tail 
                 | Ok t' -> Error (NonMatching (pos, t', t))
                 | Error e -> Error e
             )
