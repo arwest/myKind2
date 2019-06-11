@@ -21,15 +21,15 @@ type attribute =
     | NextName of ident
     | InitTrue
     | TransTrue
-    | InvarProperty of ident
-    | LiveProperty of ident
+    | InvarProperty of int
+    | LiveProperty of int
 
 type term = 
     | Ident of ident
-    | Numeral of string
+    | Numeral of int
     | True
     | False
-    | Operation of string * term 
+    | Operation of string * term list
     | AttributeTerm of term * attribute
 
 type sort = 
@@ -42,7 +42,7 @@ type sorted_var =
 type vmt_expr = 
     | DeclareFun of ident * sort list * sort
     | DefineFun of ident * sorted_var list * sort * term
-    | DeclareSort of ident * string
+    | DeclareSort of ident * int
     | DefineSort of ident * ident list * sort
     | SetLogic of ident
     | SetOption of ident * attribute

@@ -25,7 +25,7 @@ let mk_pos = Position.create_position
 
 
 %token <string> ID
-%token <string> NUM
+%token <int> NUM
 %token TRUE FALSE
 %token LPAREN RPAREN
 %token COLON
@@ -58,8 +58,8 @@ function_def:
 
 term:
     | c = constant                                                          { c }
-    | op = ID t = term                                                      { A.Operation (op, t) }
-    | EXCL t = term a = attribute                                           { A.AttributeTerm (t, a) }
+    | LPAREN op = ID tl = list (term) RPAREN                                { A.Operation (op, tl) }
+    | LPAREN EXCL t = term a = attribute RPAREN                             { A.AttributeTerm (t, a) }
 
 sorted_var:
     | LPAREN id = ID s = sort RPAREN                                        { A.SortedVar (id, s) }
@@ -75,8 +75,8 @@ attribute:
     | NEXT id = ID                                                          { A.NextName id }
     | INIT TRUE                                                             { A.InitTrue }
     | TRANS TRUE                                                            { A.TransTrue }
-    | INVARPROP id = ID                                                     { A.InvarProperty id }
-    | LIVEPROP id = ID                                                      { A.LiveProperty id }
+    | INVARPROP n = NUM                                                     { A.InvarProperty n }
+    | LIVEPROP n = NUM                                                      { A.LiveProperty n }
 
 constant: 
     | i = ID                                                                { A.Ident i }

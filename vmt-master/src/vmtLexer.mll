@@ -75,7 +75,7 @@ rule token = parse
   (* Constants *)
   | "true"            { P.TRUE }
   | "false"           { P.FALSE }
-  | numeral as num    { P.NUM num }
+  | numeral as num    { P.NUM (int_of_string (num)) }
   | identifier as id  { P.ID id }
 
   (* Whitespace and New Line (both ignored) *)
@@ -84,6 +84,9 @@ rule token = parse
 
   (* Inline Comment *)
   | ';'               { skip_to_eol lexbuf }
+
+  (* Skip set info command *)
+  | "(set-info"       { skip_to_eol lexbuf }
 
   (* End of File *)
   | eof               { P.EOF }
