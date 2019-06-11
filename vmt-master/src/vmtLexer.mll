@@ -70,7 +70,7 @@ rule token = parse
   | '('               { P.LPAREN }
   | ')'               { P.RPAREN }
   | ':'               { P.COLON }
-  | '!'               { EXCL }
+  | '!'               { P.EXCL }
 
   (* Constants *)
   | "true"            { P.TRUE }
