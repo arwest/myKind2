@@ -1,0 +1,5 @@
+MODULE main
+VAR x : integer;
+INIT x = 1;
+TRANS next(x) = x + 1;
+INVARSPEC x > 0;
