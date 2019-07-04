@@ -18,8 +18,9 @@ type vmt_error =
     | InvalidOeprator of Position.t * string
     | InvalidType of Position.t * string
     | MissingIdentifer of Position.t * string
-    | MissingTerm of Position.t * string
+    | MissingTerm of Position.t 
     | NonMatchingTypes of Position.t * string * string
+    | NotSupported of Position.t * string
 
 let filter_map (f : ('a -> 'b option)) (l : 'a list) : 'b list =
     l |> List.map f 
@@ -34,47 +35,41 @@ let rec eval_sort sort =
     match sort with
     | A.Sort (pos, str) ->(
         match str with
-        | "Bool" -> None
-        | "Int" -> None
-        | "Real" -> None
-        | _ -> Some ( InvalidType (pos, str) )
+        | "Bool" -> Ok "Bool"
+        | "Int" -> Ok "Bool"
+        | "Real" -> Ok "Bool"
+        | _ -> Error ( InvalidType (pos, str) )
     )
-    | A.MultiSort (pos, str, sort_list) ->(
-        match str with
-        | "Bool" -> eval_sort_list sort_list
-        | "Int" -> eval_sort_list sort_list
-        | "Real" -> eval_sort_list sort_list
-        | _ -> Some ( InvalidType (pos, str) )
-    )
+    | A.MultiSort (pos, str, sort_list) -> Error (NotSupported (pos, "MutliSort")) (* TODO: Not currently supported becasue don't know how to handle it *)
 
 and eval_sort_list sort_list =
     match sort_list with
     | [] -> None
     | sort :: t ->(
         match eval_sort sort with
-        | None -> eval_sort_list t
-        | error -> error
+        | Ok rt -> eval_sort_list t
+        | Error error -> Some error
     )
 
 let rec eval_sorted_var_list sorted_var_list local_env =
     match sorted_var_list with
-    | [] -> local_env
+    | [] -> Ok local_env
     | sorted_var :: tail -> (
         match sorted_var with
         | A.SortedVar (pos, ident, sort) -> (
             match (eval_sort sort) with
-            | Some error -> Error error
-            | None -> (
-                let local_env' = (ident, sort) :: local_env in
+            | Error error -> Error error
+            | Ok _type -> (
+                let local_env' = (ident, _type) :: local_env in
                 eval_sorted_var_list tail local_env'
             )
         )
     )
 
-let eval_term term env =
+let rec eval_term term env =
     match term with
     | A.Ident (pos, ident) -> (
-        match filter_map (fun x -> if fst x = ident then Some (snd x) else None) env
+        match filter_map (fun x -> if fst x = ident then Some (snd x) else None) env with
         | [] -> Error (MissingIdentifer (pos, ident))
         | var_type :: _ -> Ok var_type
     )
@@ -97,7 +92,7 @@ and eval_term_list term_list env pos =
     | [] -> Error (MissingTerm pos)
     | term :: [] -> eval_term term env
     | term :: tail -> (
-        let term_result = eval_term env in
+        let term_result = eval_term term env in
         let tail_result = eval_term_list tail env pos in
         match (term_result, tail_result) with
         | (Error error, _) -> Error error
@@ -116,34 +111,35 @@ let eval_expr expr env =
         match (id_exist, eval_sort_list sort_list, eval_sort sort) with
         | (Some _, _, _) -> Error (IdentifierAlreadyExists (pos, ident))
         | (_, Some error, _) -> Error error
-        | (_, _, Some error) -> Error error
-        | _ -> (ident, sort) :: env
+        | (_, _, Error error) -> Error error
+        | (_, _, Ok return_type ) -> Ok ((ident, return_type) :: env)
     )
     | A.DefineFun (pos, ident, sorted_var_list, sort, term) -> (
         let id_exist = find_opt (fun x -> if fst x = ident then true else false) env in
-        match (id_exist, eval_sorted_var_list sorted_var_list, eval_sort sort) with
+        match (id_exist, eval_sorted_var_list sorted_var_list env, eval_sort sort) with
         | (Some _, _, _) -> Error (IdentifierAlreadyExists (pos, ident))
         | (_, Error error, _) -> Error error
-        | (_, _, Some error) -> Error error
-        | (_, Ok local_env, _) -> (
+        | (_, _, Error error) -> Error error
+        | (_, Ok local_env, Ok return_type) -> (
             match eval_term term local_env with
-            | Some 
+            | Ok return_type -> Ok ((ident, return_type) :: env)
+            | Error error -> Error error
         )
     )
-    | A.DeclareSort (pos, ident, num) -> ()
-    | A.DefineSort (pos, ident, ident_list, sort) -> ()
-    | A.SetLogic (pos, ident) -> ()
-    | A.SetOption (pos, ident, att) -> ()
-    | A.Assert (pos, term) -> ()
+    | A.DeclareSort (pos, ident, num) -> Ok env
+    | A.DefineSort (pos, ident, ident_list, sort) -> Ok env
+    | A.SetLogic (pos, ident) -> Ok env
+    | A.SetOption (pos, ident, att) -> Ok env
+    | A.Assert (pos, term) -> Ok env
 
 let rec evaluate_expr_list expr_list env = 
     match expr_list with
     | [] -> Ok expr_list
     | expr :: t -> (
-        let res = eval_expr env in
+        let res = eval_expr expr env in
         match res with
         | Ok env' -> evaluate_expr_list t env'
-        | _ -> res
+        | Error error -> Error error
     )
 
 let check_vmt (expr_list : A.t ) : (A.t, vmt_error) result = 
