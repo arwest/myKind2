@@ -11,3 +11,14 @@
 *)
 
 (** @author Andrew West *)
+
+type vmt_error = 
+    | IdentifierAlreadyExists of Position.t * string
+    | InvalidOeprator of Position.t * string
+    | InvalidType of Position.t * string
+    | MissingIdentifer of Position.t * string
+    | MissingTerm of Position.t
+    | NonMatchingTypes of Position.t * string * string
+    | NotSupported of Position.t * string
+
+val check_vmt : VmtAst.t -> (VmtAst.t, vmt_error) result
