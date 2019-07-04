@@ -25,7 +25,9 @@ type parse_error =
 
 let parse_buffer lexbuf : (output, parse_error) result =
   try
-    VmtParser.program VmtLexer.token lexbuf |> ignore ;
+    VmtParser.program VmtLexer.token lexbuf 
+    |> VmtChecker.check_vmt
+    |> ignore ;
     Ok "Done."
   with 
   | VmtLexer.Unexpected_Char c ->
