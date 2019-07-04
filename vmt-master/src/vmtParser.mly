@@ -25,7 +25,8 @@ let mk_pos = Position.create_position
 
 
 %token <string> ID
-%token <int> NUM
+%token <int> INT
+%token <float> REAL
 %token TRUE FALSE
 %token LPAREN RPAREN
 %token COLON
@@ -47,7 +48,7 @@ expression: LPAREN e = expression_body RPAREN                               { e 
 expression_body:
     | DECLAREFUN id = ID LPAREN sl = list( sort ) RPAREN s = sort           { A.DeclareFun (mk_pos $startpos, id, sl, s) }                              
     | DEFINEFUN f = function_def                                            { f }
-    | DECLARESORT i = ID n = NUM                                            { A.DeclareSort (mk_pos $startpos, i, n) }
+    | DECLARESORT i = ID n = INT                                            { A.DeclareSort (mk_pos $startpos, i, n) }
     | DEFINESORT i = ID LPAREN idl = list(ID) RPAREN s = sort               { A.DefineSort (mk_pos $startpos, i, idl, s) }
     | SETLOGIC i = ID                                                       { A.SetLogic (mk_pos $startpos, i) }
     | SETOPTION COLON i = ID o = cust_option                                { A.SetOption (mk_pos $startpos, i, o) }
@@ -75,11 +76,12 @@ attribute:
     | NEXT id = ID                                                          { A.NextName (mk_pos $startpos, id) }
     | INIT TRUE                                                             { A.InitTrue (mk_pos $startpos) }
     | TRANS TRUE                                                            { A.TransTrue (mk_pos $startpos) }
-    | INVARPROP n = NUM                                                     { A.InvarProperty (mk_pos $startpos, n) }
-    | LIVEPROP n = NUM                                                      { A.LiveProperty (mk_pos $startpos, n) }
+    | INVARPROP n = INT                                                     { A.InvarProperty (mk_pos $startpos, n) }
+    | LIVEPROP n = INT                                                      { A.LiveProperty (mk_pos $startpos, n) }
 
 constant: 
     | i = ID                                                                { A.Ident (mk_pos $startpos, i) }
-    | int = NUM                                                             { A.Numeral (mk_pos $startpos, int) }
+    | int = INT                                                             { A.Integer (mk_pos $startpos, int) }
+    | real = REAL                                                           { A.Real (mk_pos $startpos, real) }
     | TRUE                                                                  { A.True (mk_pos $startpos) }
     | FALSE                                                                 { A.False (mk_pos $startpos) }

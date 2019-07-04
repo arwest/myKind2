@@ -26,7 +26,8 @@ type attribute =
 
 type term = 
     | Ident of Position.t * ident
-    | Numeral of Position.t * int
+    | Integer of Position.t * int
+    | Real of Position.t * float
     | True of Position.t
     | False of Position.t
     | Operation of Position.t * string * term list
