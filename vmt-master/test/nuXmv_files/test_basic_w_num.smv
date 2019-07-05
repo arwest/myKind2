@@ -21,7 +21,7 @@ ue_state	:
 DEFINE
 
 ue_T1   :=	 (P_1 > 0)	;
-ue_T2   :=	 (P_0 > 0)	;
+ue_T2   :=	 !(P_0 > 0)	;
 ue_T3	:=	 (ue_state = ue_1)	;
 ue_T4	:=	 (ue_state = 1)	;
 ue_T5	:=	 (ue_state = unknown_id)	;
