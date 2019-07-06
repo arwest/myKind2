@@ -14,7 +14,7 @@
 
 type vmt_error = 
     | IdentifierAlreadyExists of Position.t * string
-    | InvalidOeprator of Position.t * string
+    | InvalidOperator of Position.t * string
     | InvalidType of Position.t * string
     | InvalidTypeWithOperator of Position.t * string * string
     | MissingIdentifer of Position.t * string
