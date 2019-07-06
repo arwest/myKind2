@@ -2,4 +2,5 @@
 nuXmvParser-master/src/nuxmvParserBackup.mly
 node_modules/.lsp/debug.log
 vmt-master/main.native
+nuXmvParser-master/main.native
 */_build
