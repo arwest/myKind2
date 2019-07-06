@@ -20,15 +20,37 @@ type output = string
 
 type parse_error =
   | UnexpectedChar of Position.t * char
-  | SyntaxError of Position.t
-
+  | SyntaxError of Position.t    
+  | IdentifierAlreadyExists of Position.t * string
+  | InvalidArgCount of Position.t * int * int
+  | InvalidOperator of Position.t * string
+  | InvalidType of Position.t * string
+  | InvalidTypeWithOperator of Position.t * string * string
+  | MissingIdentifier of Position.t * string
+  | MissingTerm of Position.t 
+  | NonMatchingTypes of Position.t * string * string
+  | NotSupported of Position.t * string
 
 let parse_buffer lexbuf : (output, parse_error) result =
   try
-    VmtParser.program VmtLexer.token lexbuf 
-    |> VmtChecker.check_vmt
-    |> ignore ;
-    Ok "Done."
+    let check_res = VmtParser.program VmtLexer.token lexbuf |> VmtChecker.check_vmt in
+    match check_res with
+    | Ok abs_syn -> abs_syn |> ignore ; Ok "Done."
+    | Error error -> ( 
+      let err = 
+        match error with
+        | VmtChecker.IdentifierAlreadyExists (pos, str) -> IdentifierAlreadyExists (pos, str)
+        | VmtChecker.InvalidArgCount (pos, i1, i2) -> InvalidArgCount (pos, i1, i2)
+        | VmtChecker.InvalidOperator (pos, str) -> InvalidOperator (pos, str)
+        | VmtChecker.InvalidType (pos, str) -> InvalidType (pos, str)
+        | VmtChecker.InvalidTypeWithOperator (pos, str1, str2) -> InvalidTypeWithOperator (pos, str1, str2)
+        | VmtChecker.MissingIdentifer (pos, str) -> MissingIdentifier (pos, str)
+        | VmtChecker.MissingTerm pos -> MissingTerm pos
+        | VmtChecker.NonMatchingTypes (pos, str1, str2) -> NonMatchingTypes (pos, str1, str2)
+        | VmtChecker.NotSupported (pos, str) -> NotSupported (pos, str)
+      in
+      Error err
+    )
   with 
   | VmtLexer.Unexpected_Char c ->
     let pos = Position.get_position lexbuf in Error (UnexpectedChar (pos, c))
