@@ -15,7 +15,7 @@ module A = VmtAst
 
 type vmt_error = 
     | IdentifierAlreadyExists of Position.t * string
-    | InvalidOeprator of Position.t * string
+    | InvalidOperator of Position.t * string
     | InvalidType of Position.t * string
     | InvalidTypeWithOperator of Position.t * string * string
     | MissingIdentifer of Position.t * string
@@ -105,35 +105,50 @@ and eval_operation pos op term_list env =
             then Error (InvalidArgCount (pos, 1, len))
             else Ok "Bool"
     )
+    | ("not", Ok _type) -> Error (InvalidTypeWithOperator (pos, _type, op))
     | ("or", Ok "Bool") -> Ok "Bool"
+    | ("or", Ok _type) -> Error (InvalidTypeWithOperator (pos, _type, op))
     | ("and", Ok "Bool") -> Ok "Bool"
+    | ("and", Ok _type) -> Error (InvalidTypeWithOperator (pos, _type, op))
     | ("xor", Ok "Bool") -> Ok "Bool"
+    | ("xor", Ok _type) -> Error (InvalidTypeWithOperator (pos, _type, op))
     | ("=", Ok _type) when _type = "Bool" -> Ok _type
     | ("=", Ok _type) when _type = "Int" -> Ok "Bool"
+    | ("=", Ok _type) -> Error (InvalidTypeWithOperator (pos, _type, op))
     | ("<=", Ok _type) when _type = "Int" -> Ok "Bool"
     | ("<=", Ok _type) when _type = "Real" -> Ok "Bool"
+    | ("<=", Ok _type) -> Error (InvalidTypeWithOperator (pos, _type, op))
     | ("<", Ok _type) when _type = "Int" -> Ok "Bool"
     | ("<", Ok _type) when _type = "Real" -> Ok "Bool"
+    | ("<", Ok _type) -> Error (InvalidTypeWithOperator (pos, _type, op))
     | (">=", Ok _type) when _type = "Int" -> Ok "Bool"
     | (">=", Ok _type) when _type = "Real" -> Ok "Bool"
+    | (">=", Ok _type) -> Error (InvalidTypeWithOperator (pos, _type, op))
     | (">", Ok _type) when _type = "Int" -> Ok "Bool"
     | (">", Ok _type) when _type = "Real" -> Ok "Bool"
+    | (">", Ok _type) -> Error (InvalidTypeWithOperator (pos, _type, op))
     | ("-", Ok _type) when _type = "Int" -> Ok _type 
-    | ("-", Ok _type) when _type = "Real" -> Ok _type 
+    | ("-", Ok _type) when _type = "Real" -> Ok _type
+    | ("-", Ok _type) -> Error (InvalidTypeWithOperator (pos, _type, op))
     | ("+", Ok _type) when _type = "Int" -> Ok _type 
     | ("+", Ok _type) when _type = "Real" -> Ok _type 
+    | ("+", Ok _type) -> Error (InvalidTypeWithOperator (pos, _type, op))
     | ("*", Ok _type) when _type = "Int" -> Ok _type 
-    | ("*", Ok _type) when _type = "Real" -> Ok _type 
+    | ("*", Ok _type) when _type = "Real" -> Ok _type
+    | ("*", Ok _type) -> Error (InvalidTypeWithOperator (pos, _type, op)) 
     | ("/", Ok _type) when _type = "Int" -> Ok "Real"
-    | ("/", Ok _type) when _type = "Real" -> Ok _type 
+    | ("/", Ok _type) when _type = "Real" -> Ok _type
+    | ("/", Ok _type) -> Error (InvalidTypeWithOperator (pos, _type, op)) 
     | ("//", Ok _type) when _type = "Int" -> Ok _type 
-    | ("//", Ok _type) when _type = "Real" -> Ok "Int" 
+    | ("//", Ok _type) when _type = "Real" -> Ok "Int"
+    | ("//", Ok _type) -> Error (InvalidTypeWithOperator (pos, _type, op)) 
     | ("mod", Ok _type) when _type = "Int" -> (
         let len = List.length term_list in
         if len <> 2 
             then Error (InvalidArgCount (pos, 2, len))
             else Ok "Int"
     )
+    | ("mod", Ok _type) -> Error (InvalidTypeWithOperator (pos, _type, op))
     | ("abs", Ok _type) -> (
         let len = List.length term_list in
         if len <> 2 
@@ -144,7 +159,7 @@ and eval_operation pos op term_list env =
                 | "Real" -> Ok _type
                 | _ -> Error (InvalidTypeWithOperator (pos, _type, "abs"))
     )
-    | (op, Ok _type) -> Error (InvalidTypeWithOperator (pos, _type, op))
+    | (op, Ok _type) -> Error (InvalidOperator (pos, op))
     | (_, Error error) -> Error error (* TODO: write the logic for dealing with operators and the type given to them *)
 
 
@@ -188,10 +203,10 @@ let eval_expr expr env =
         )
     )
     (* TODO: determine what we need to check or if we even support declare sort, define sort, set logic, and set option*)
-    | A.DeclareSort (pos, ident, num) -> Ok env 
-    | A.DefineSort (pos, ident, ident_list, sort) -> Ok env
-    | A.SetLogic (pos, ident) -> Ok env
-    | A.SetOption (pos, ident, att) -> Ok env
+    | A.DeclareSort (pos, ident, num) -> Error (NotSupported (pos, "DeclareSort")) 
+    | A.DefineSort (pos, ident, ident_list, sort) -> Error (NotSupported (pos, "DefineSort")) 
+    | A.SetLogic (pos, ident) -> Error (NotSupported (pos, "SetLogic")) 
+    | A.SetOption (pos, ident, att) -> Error (NotSupported (pos, "SetOption")) 
     | A.Assert (pos, term) -> (
         match eval_term term env with
         | Ok "Bool" -> Ok env
