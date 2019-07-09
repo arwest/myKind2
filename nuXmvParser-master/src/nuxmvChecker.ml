@@ -58,6 +58,11 @@ let find_opt (func : ('a -> bool)) (lst: 'a list) : 'a option =
 let lookup_opt (id : string) (lst : (string * 'a) list ) : (string * 'a) option = 
     find_opt (fun x -> match x with | (s,t) when s = id -> true | _ -> false) lst
 
+let filter_map (f : ('a -> 'b option)) (l : 'a list) : 'b list =
+    l |> List.map f 
+      |> List.filter (fun x -> match x with None -> false | _ -> true)
+      |> List.map (fun x -> match x with Some v -> v | _ -> assert false)
+
 (* SEMANTIC CHECKER *)
 
 let rec s_eval_expr (ltl: bool) (next:bool) (expr: A.nuxmv_expr) : semantic_error_type check_result = 
@@ -540,7 +545,16 @@ let rec t_eval_expr (in_enum : (bool * env)) (env : env) (expr: A.nuxmv_expr)  :
                     let turn_into_sets lst = List.map (fun x -> match x with Ok SetT x' -> SetT x' | Ok x'-> SetT [x'] | _ -> assert false) lst in
                     Ok (SetT (turn_into_sets right_expr_res))
                 )
-                | None -> Ok (SetT (List.map (fun x -> match x with Ok x' -> x' | _ -> assert false) right_expr_res) )
+                | None -> (
+                    let head_type = match (List.hd right_expr_res) with Ok _type -> _type | _ -> assert false in
+                    let check_type_function = 
+                        (fun x -> match x with | Ok x when x = head_type -> None | Ok x -> Some x | _ -> assert false ) 
+                    in
+                    let different_return_types = filter_map check_type_function (List.tl right_expr_res) in
+                    if List.length different_return_types > 0 
+                        then Error (NonMatching (p, head_type, List.hd (List.tl different_return_types)))
+                        else Ok head_type
+                )
             )
             | _ -> assert false
         )
