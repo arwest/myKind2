@@ -47,7 +47,11 @@ let read_input_from_file filename =
   | Error (VmtInput.InvalidTypeWithOperator (pos, str1, str2)) ->
       Format.eprintf "%a: Operator '%s' doesn't support type '%s'@." 
         Position.pp_print_position pos str2 str1
-  
+
+  | Error (VmtInput.MissingAttribute pos) ->
+    Format.eprintf "%a: Attribute is required when using (! term attribute_list )@." 
+      Position.pp_print_position pos
+
   | Error (VmtInput.MissingIdentifier (pos, str)) ->
       Format.eprintf "%a: Identifier '%s' is missing@." 
         Position.pp_print_position pos str

@@ -26,6 +26,7 @@ type parse_error =
   | InvalidOperator of Position.t * string
   | InvalidType of Position.t * string
   | InvalidTypeWithOperator of Position.t * string * string
+  | MissingAttribute of Position.t 
   | MissingIdentifier of Position.t * string
   | MissingTerm of Position.t 
   | NonMatchingTypes of Position.t * string * string

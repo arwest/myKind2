@@ -26,6 +26,7 @@ type parse_error =
   | InvalidOperator of Position.t * string
   | InvalidType of Position.t * string
   | InvalidTypeWithOperator of Position.t * string * string
+  | MissingAttribute of Position.t
   | MissingIdentifier of Position.t * string
   | MissingTerm of Position.t 
   | NonMatchingTypes of Position.t * string * string
@@ -44,7 +45,8 @@ let parse_buffer lexbuf : (output, parse_error) result =
         | VmtChecker.InvalidOperator (pos, str) -> InvalidOperator (pos, str)
         | VmtChecker.InvalidType (pos, str) -> InvalidType (pos, str)
         | VmtChecker.InvalidTypeWithOperator (pos, str1, str2) -> InvalidTypeWithOperator (pos, str1, str2)
-        | VmtChecker.MissingIdentifer (pos, str) -> MissingIdentifier (pos, str)
+        | VmtChecker.MissingAttribute pos -> MissingAttribute pos
+        | VmtChecker.MissingIdentifier (pos, str) -> MissingIdentifier (pos, str)
         | VmtChecker.MissingTerm pos -> MissingTerm pos
         | VmtChecker.NonMatchingTypes (pos, str1, str2) -> NonMatchingTypes (pos, str1, str2)
         | VmtChecker.NotSupported (pos, str) -> NotSupported (pos, str)
