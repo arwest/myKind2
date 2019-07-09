@@ -1,0 +1,49 @@
+MODULE main
+
+
+--VARIABLE DECLARATION SECTION --
+
+
+VAR
+-- OTHER ENVIRONMENTAL VARIABLES --
+P_0 : boolean ;
+P_1 : boolean ;
+
+ue_state	:
+{
+	ue_1,
+    unknown_id,
+    1
+};
+
+DEFINE
+
+ue_T1   :=	 (P_1)	;
+ue_T2   :=	 (P_0)	;
+ue_T3	:=	 (ue_state = ue_1)	;
+ue_T4	:=	 (ue_state = 1)	;
+ue_T5	:=	 (ue_state = unknown_id)	;
+
+ASSIGN
+init(ue_state) := unknown_id ;
+
+next(ue_state):= 
+case
+	P_0  :  ue_1	;
+    P_1  :	 unknown_id	;
+    TRUE : 
+    {
+        ue_1,
+        unknown_id,
+        1   
+    } ;
+esac;
+
+TRANS
+case
+(ue_T1 | ue_T2 | ue_T3 )	:	next(ue_state)	=	unknown_id	;
+(ue_T4 | ue_T5 )	:	next(ue_state)	=	ue_1	;
+TRUE	:	next(ue_state)	=	unknown_id	;
+esac	;
+
+INVARSPEC P_0 ;
