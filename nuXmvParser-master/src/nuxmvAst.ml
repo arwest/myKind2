@@ -94,6 +94,7 @@ and comp_ident =
     
 type expr_type = 
     | LtlExpr of Position.t * nuxmv_expr
+    | InvarExpr of Position.t * nuxmv_expr
     | NextExpr of Position.t * nuxmv_expr
     | SimpleExpr of Position.t * nuxmv_expr
     (* Array Expression*)
@@ -131,6 +132,7 @@ type module_element =
     | DefineDecl of Position.t * define_element list
     | AssignConst of Position.t * assign_const list
     | TransConst of Position.t * expr_type (* Next operation is allowed *)
+    | InvarSpec of Position.t * expr_type (* Next operation is not allowed *)
     | LtlSpec of Position.t * expr_type
 
 type nuxmv_module = 
@@ -354,6 +356,7 @@ let print_module_element (s:string) (me : module_element) : string =
     | DefineDecl (_, del) -> s
     | AssignConst (_, acl) -> s
     | TransConst (_, expr_type) -> s
+    | InvarSpec (_, expr_type) -> s
     | LtlSpec (_, expr_type) -> s
 
 let print_nuxmv_module (s: string) (nm : nuxmv_module) : string = 

@@ -71,6 +71,7 @@ and comp_ident =
     
 type expr_type = 
     | LtlExpr of Position.t * nuxmv_expr
+    | InvarExpr of Position.t * nuxmv_expr
     | NextExpr of Position.t * nuxmv_expr
     | SimpleExpr of Position.t * nuxmv_expr
     | ArrayExpr of Position.t * expr_type list
@@ -107,6 +108,7 @@ type module_element =
     | DefineDecl of Position.t * define_element list
     | AssignConst of Position.t * assign_const list
     | TransConst of Position.t * expr_type
+    | InvarSpec of Position.t * expr_type 
     | LtlSpec of Position.t * expr_type
 
 type nuxmv_module = 
