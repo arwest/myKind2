@@ -45,6 +45,7 @@ rule token = parse
   | "DEFINE"           { P.DEFINE }
   | "ASSIGN"           { P.ASSIGN }
   | "TRANS"            { P.TRANS }
+  | "INVARSPEC"        { P.INVAR }
   | "LTLSPEC"          { P.LTLSPEC }
  (* | "self"             { P.SELF } *)
   | "init"             { P.INIT }

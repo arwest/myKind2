@@ -26,7 +26,7 @@ exception Ltl_Use_Error
 %}
 
 
-%token MODULE VAR DEFINE ASSIGN TRANS LTLSPEC
+%token MODULE VAR DEFINE ASSIGN TRANS INVAR LTLSPEC
 %token X G F U V Y Z H O S T
 %token <string> ID
 %token <int> CINT
@@ -78,6 +78,7 @@ module_element:
  | dd = define_declaration { dd }
  | ac = assign_constraint { ac }
  | tc = trans_constraint { tc }
+ | ivs = invar_specification { ivs }
  | ltls = ltl_specification { ltls }
  
 
@@ -137,11 +138,19 @@ assign_element:
 trans_constraint: TRANS e = next_expr option(SEMICOLON) { A.TransConst (mk_pos $startpos, e) } 
     ;
 
+(* Invar Specifications *)
+invar_specification: INVAR e = invar_expr SEMICOLON { A.InvarSpec (mk_pos $startpos, e) }
+    ;
+
 (* LTL Specifications *)
 ltl_specification: LTLSPEC le = ltl_expr option(SEMICOLON) { A.LtlSpec (mk_pos $startpos, le) }
     ;
 
 (* Expression Types *)
+%inline invar_expr:
+    | e = expr { A.InvarExpr(mk_pos $startpos, e) }
+    ;
+
 %inline ltl_expr:
     | e = expr { A.LtlExpr(mk_pos $startpos, e) }
     ;
