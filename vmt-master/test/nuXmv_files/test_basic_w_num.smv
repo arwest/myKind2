@@ -48,5 +48,4 @@ case
 TRUE	:	next(ue_state)	=	unknown_id	;
 esac	;
 
-LTLSPEC
-G( P_2 ) -> G( P_3 ) ;
+INVARSPEC (P_0 > 1) & (P_1 > 0) & P_2 & P_3 ;
