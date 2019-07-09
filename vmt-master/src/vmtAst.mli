@@ -32,7 +32,7 @@ type term =
     | True of Position.t
     | False of Position.t
     | Operation of Position.t * string * term list
-    | AttributeTerm of Position.t * term * attribute
+    | AttributeTerm of Position.t * term * attribute list
 
 type sort = 
     | Sort of Position.t * string
