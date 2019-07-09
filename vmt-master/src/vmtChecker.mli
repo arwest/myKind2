@@ -14,13 +14,14 @@
 
 type vmt_error = 
     | IdentifierAlreadyExists of Position.t * string
+    | InvalidArgCount of Position.t * int * int
     | InvalidOperator of Position.t * string
     | InvalidType of Position.t * string
     | InvalidTypeWithOperator of Position.t * string * string
-    | MissingIdentifer of Position.t * string
+    | MissingAttribute of Position.t
+    | MissingIdentifier of Position.t * string
     | MissingTerm of Position.t 
     | NonMatchingTypes of Position.t * string * string
     | NotSupported of Position.t * string
-    | InvalidArgCount of Position.t * int * int
 
 val check_vmt : VmtAst.t -> (VmtAst.t, vmt_error) result
