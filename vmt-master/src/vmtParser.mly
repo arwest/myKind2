@@ -60,7 +60,7 @@ function_def:
 term:
     | c = constant                                                          { c }
     | LPAREN op = ID tl = list (term) RPAREN                                { A.Operation (mk_pos $startpos, op, tl) }
-    | LPAREN EXCL t = term a = attribute RPAREN                             { A.AttributeTerm (mk_pos $startpos, t, a) }
+    | LPAREN EXCL t = term al = nonempty_list(attribute) RPAREN             { A.AttributeTerm (mk_pos $startpos, t, al) }
 
 sorted_var:
     | LPAREN id = ID s = sort RPAREN                                        { A.SortedVar (mk_pos $startpos, id, s) }
