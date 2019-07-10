@@ -36,7 +36,7 @@ let parse_buffer lexbuf : (output, parse_error) result =
   try
     let check_res = VmtParser.program VmtLexer.token lexbuf |> VmtChecker.check_vmt in
     match check_res with
-    | Ok abs_syn -> abs_syn |> ignore ; Ok "Done."
+    | Ok abs_syn -> Ok abs_syn |> ignore ; Ok "Done."
     | Error error -> ( 
       let err = 
         match error with
