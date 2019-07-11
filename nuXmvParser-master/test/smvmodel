@@ -145,7 +145,7 @@ init(state) := S_0 ;
 init(ghost) := TRUE ;
 next(ghost):=
 case
-	TRUE : {FALSE};
+	TRUE : FALSE;
 esac;
 
 
