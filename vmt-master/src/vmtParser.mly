@@ -30,7 +30,7 @@ let mk_pos = Position.create_position
 %token TRUE FALSE
 %token LPAREN RPAREN
 %token COLON
-%token EXCL NEXT INIT TRANS INVARPROP LIVEPROP
+%token EXCL NEXT INIT TRANS INVARPROP LIVEPROP LET
 %token DECLAREFUN DEFINEFUN DECLARESORT DEFINESORT
 %token SETLOGIC SETOPTION ASSERT
 %token EOF
@@ -41,47 +41,51 @@ let mk_pos = Position.create_position
 
 %%
 
-program: el = nonempty_list( expression ) EOF                               { el }
+program: el = nonempty_list( expression ) EOF                                   { el }
 
-expression: LPAREN e = expression_body RPAREN                               { e }
+expression: LPAREN e = expression_body RPAREN                                   { e }
 
 expression_body:
-    | DECLAREFUN id = ID LPAREN sl = list( sort ) RPAREN s = sort           { A.DeclareFun (mk_pos $startpos, id, sl, s) }                              
-    | DEFINEFUN f = function_def                                            { f }
-    | DECLARESORT i = ID n = INT                                            { A.DeclareSort (mk_pos $startpos, i, n) }
-    | DEFINESORT i = ID LPAREN idl = list(ID) RPAREN s = sort               { A.DefineSort (mk_pos $startpos, i, idl, s) }
-    | SETLOGIC i = ID                                                       { A.SetLogic (mk_pos $startpos, i) }
-    | SETOPTION COLON i = ID o = cust_option                                { A.SetOption (mk_pos $startpos, i, o) }
-    | ASSERT t = term                                                       { A.Assert (mk_pos $startpos, t) }
+    | DECLAREFUN id = ID LPAREN sl = list( sort ) RPAREN s = sort               { A.DeclareFun (mk_pos $startpos, id, sl, s) }                              
+    | DEFINEFUN f = function_def                                                { f }
+    | DECLARESORT i = ID n = INT                                                { A.DeclareSort (mk_pos $startpos, i, n) }
+    | DEFINESORT i = ID LPAREN idl = list(ID) RPAREN s = sort                   { A.DefineSort (mk_pos $startpos, i, idl, s) }
+    | SETLOGIC i = ID                                                           { A.SetLogic (mk_pos $startpos, i) }
+    | SETOPTION COLON i = ID o = cust_option                                    { A.SetOption (mk_pos $startpos, i, o) }
+    | ASSERT t = term                                                           { A.Assert (mk_pos $startpos, t) }
 
 function_def:
-    | fun_id = ID LPAREN sl = list(sorted_var) RPAREN s = sort t = term     { A.DefineFun (mk_pos $startpos, fun_id, sl, s, t) }
+    | fun_id = ID LPAREN sl = list(sorted_var) RPAREN s = sort t = term         { A.DefineFun (mk_pos $startpos, fun_id, sl, s, t) }
 
 term:
-    | c = constant                                                          { c }
-    | LPAREN op = ID tl = list (term) RPAREN                                { A.Operation (mk_pos $startpos, op, tl) }
-    | LPAREN EXCL t = term al = nonempty_list(attribute) RPAREN             { A.AttributeTerm (mk_pos $startpos, t, al) }
+    | c = constant                                                              { c }
+    | LPAREN op = ID tl = list(term) RPAREN                                     { A.Operation (mk_pos $startpos, op, tl) }
+    | LPAREN LET LPAREN vbl = nonempty_list(var_binding)RPAREN t = term RPAREN  { A.Let (mk_pos $startpos, vbl, t) } 
+    | LPAREN EXCL t = term al = nonempty_list(attribute) RPAREN                 { A.AttributeTerm (mk_pos $startpos, t, al) }
+
+var_binding:
+    | LPAREN id = ID t = term RPAREN                                            { A.VarBind (mk_pos $startpos, id, t) }
 
 sorted_var:
-    | LPAREN id = ID s = sort RPAREN                                        { A.SortedVar (mk_pos $startpos, id, s) }
+    | LPAREN id = ID s = sort RPAREN                                            { A.SortedVar (mk_pos $startpos, id, s) }
     
 sort: 
-    | id = ID                                                               { A.Sort (mk_pos $startpos, id) }
-    | LPAREN id = ID sort_list = nonempty_list(sort) RPAREN                 { A.MultiSort (mk_pos $startpos, id, sort_list) }
+    | id = ID                                                                   { A.Sort (mk_pos $startpos, id) }
+    | LPAREN id = ID sort_list = nonempty_list(sort) RPAREN                     { A.MultiSort (mk_pos $startpos, id, sort_list) }
 
 cust_option:
-    | a = attribute                                                         { a }
+    | a = attribute                                                             { a }
 
 attribute:
-    | NEXT id = ID                                                          { A.NextName (mk_pos $startpos, id) }
-    | INIT TRUE                                                             { A.InitTrue (mk_pos $startpos) }
-    | TRANS TRUE                                                            { A.TransTrue (mk_pos $startpos) }
-    | INVARPROP n = INT                                                     { A.InvarProperty (mk_pos $startpos, n) }
-    | LIVEPROP n = INT                                                      { A.LiveProperty (mk_pos $startpos, n) }
+    | NEXT id = ID                                                              { A.NextName (mk_pos $startpos, id) }
+    | INIT TRUE                                                                 { A.InitTrue (mk_pos $startpos) }
+    | TRANS TRUE                                                                { A.TransTrue (mk_pos $startpos) }
+    | INVARPROP n = INT                                                         { A.InvarProperty (mk_pos $startpos, n) }
+    | LIVEPROP n = INT                                                          { A.LiveProperty (mk_pos $startpos, n) }
 
 constant: 
-    | i = ID                                                                { A.Ident (mk_pos $startpos, i) }
-    | int = INT                                                             { A.Integer (mk_pos $startpos, int) }
-    | real = REAL                                                           { A.Real (mk_pos $startpos, real) }
-    | TRUE                                                                  { A.True (mk_pos $startpos) }
-    | FALSE                                                                 { A.False (mk_pos $startpos) }
+    | i = ID                                                                    { A.Ident (mk_pos $startpos, i) }
+    | int = INT                                                                 { A.Integer (mk_pos $startpos, int) }
+    | real = REAL                                                               { A.Real (mk_pos $startpos, real) }
+    | TRUE                                                                      { A.True (mk_pos $startpos) }
+    | FALSE                                                                     { A.False (mk_pos $startpos) }
